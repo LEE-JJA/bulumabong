@@ -27,7 +27,8 @@ let failHour = 0;
 function failCount(target, add) {
   const hour = Math.floor(Date.now() / 3600e3);
   if (hour !== failHour) { failHour = hour; fails.clear(); }
-  if (add && (fails.has(target) || fails.size < 10000)) fails.set(target, (fails.get(target) || 0) + 1);
+  if (!fails.has(target) && fails.size >= 10000) return MAX_FAILS; // 표가 가득 차면 새 대상은 잠긴 것으로(닫힌 쪽으로 실패)
+  if (add) fails.set(target, (fails.get(target) || 0) + 1);
   return fails.get(target) || 0;
 }
 const same = (a, b) => { a = Buffer.from(String(a)); b = Buffer.from(String(b)); return a.length === b.length && crypto.timingSafeEqual(a, b); };
@@ -59,6 +60,7 @@ function handler(req, res) {
 
 module.exports = handler;
 module.exports.facKey = facKey;
+module.exports.failCount = failCount;
 
 // 운영자용: CODE_SECRET을 넣고 node api/verify.js key f1 → 그 시설의 기관 키
 if (require.main === module) {

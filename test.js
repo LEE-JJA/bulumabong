@@ -65,5 +65,8 @@ const call = async body => {
   const lockBase = { ...base, rid: 'rlock' };
   for (let i = 0; i < 10; i++) assert.strictEqual((await v({ action: 'check', ...lockBase, code: '000000' })).body.ok, false);
   assert.strictEqual((await v({ action: 'check', ...lockBase, code: '000000' })).code, 429);
+  // 잠금 표를 가짜 대상으로 채워도 새 대상이 풀려나지 않는다
+  for (let i = 0; i < 10000; i++) verify.failCount('junk' + i, true);
+  assert.strictEqual((await v({ action: 'check', ...base, rid: 'rfresh', code: '000000' })).code, 429);
   console.log('ok');
 })();
