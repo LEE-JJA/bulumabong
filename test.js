@@ -70,5 +70,6 @@ const call = async body => {
   const fresh = await v({ action: 'check', ...base, rid: 'rfresh', code: '000000' });
   assert.strictEqual(fresh.code, 200); assert.strictEqual(fresh.body.ok, false);
   assert.strictEqual((await v({ action: 'check', ...base, code: issued })).body.ok, true, '표가 가득 차도 진짜 학생은 인증됨');
+  assert.strictEqual((await v({ action: 'check', ...lockBase, code: '000000' })).code, 429, '표를 채워도 잠긴 요청은 그대로 잠김');
   console.log('ok');
 })();

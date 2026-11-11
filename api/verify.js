@@ -28,9 +28,13 @@ function failCount(target, add) {
   const hour = Math.floor(Date.now() / 3600e3);
   if (hour !== failHour) { failHour = hour; fails.clear(); }
   if (add) {
-    // 표가 가득 차면 가장 오래된 기록을 지운다. 새 대상을 막으면 가짜 대상으로 표를 채워 모두를 막을 수 있고,
-    // 지우는 쪽은 한 대상을 밀어내는 데 요청 1만 번(IP 제한으로 IP 1,000개×1분)이 들어 맞히기에 도움이 안 된다
-    if (!fails.has(target) && fails.size >= 10000) fails.delete(fails.keys().next().value);
+    // 표가 가득 차면 잠기지 않은 가장 오래된 기록을 지운다. 새 대상을 막으면 가짜 대상으로 표를 채워 모두를 막을 수 있고,
+    // 잠긴 기록은 남겨 두어 표를 채워 잠금을 푸는 길도 막는다. 모두 잠겼으면(요청 10만 번이 필요) 가장 오래된 것을 지운다
+    if (!fails.has(target) && fails.size >= 10000) {
+      let victim = fails.keys().next().value;
+      for (const [k, n] of fails) if (n < MAX_FAILS) { victim = k; break; }
+      fails.delete(victim);
+    }
     fails.set(target, (fails.get(target) || 0) + 1);
   }
   return fails.get(target) || 0;
