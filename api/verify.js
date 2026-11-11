@@ -27,8 +27,12 @@ let failHour = 0;
 function failCount(target, add) {
   const hour = Math.floor(Date.now() / 3600e3);
   if (hour !== failHour) { failHour = hour; fails.clear(); }
-  if (!fails.has(target) && fails.size >= 10000) return MAX_FAILS; // 표가 가득 차면 새 대상은 잠긴 것으로(닫힌 쪽으로 실패)
-  if (add) fails.set(target, (fails.get(target) || 0) + 1);
+  if (add) {
+    // 표가 가득 차면 가장 오래된 기록을 지운다. 새 대상을 막으면 가짜 대상으로 표를 채워 모두를 막을 수 있고,
+    // 지우는 쪽은 한 대상을 밀어내는 데 요청 1만 번(IP 제한으로 IP 1,000개×1분)이 들어 맞히기에 도움이 안 된다
+    if (!fails.has(target) && fails.size >= 10000) fails.delete(fails.keys().next().value);
+    fails.set(target, (fails.get(target) || 0) + 1);
+  }
   return fails.get(target) || 0;
 }
 const same = (a, b) => { a = Buffer.from(String(a)); b = Buffer.from(String(b)); return a.length === b.length && crypto.timingSafeEqual(a, b); };

@@ -65,8 +65,10 @@ const call = async body => {
   const lockBase = { ...base, rid: 'rlock' };
   for (let i = 0; i < 10; i++) assert.strictEqual((await v({ action: 'check', ...lockBase, code: '000000' })).body.ok, false);
   assert.strictEqual((await v({ action: 'check', ...lockBase, code: '000000' })).code, 429);
-  // 잠금 표를 가짜 대상으로 채워도 새 대상이 풀려나지 않는다
+  // 잠금 표를 가짜 대상으로 채워도 다른 요청이 막히지 않는다(오래된 기록부터 밀려남)
   for (let i = 0; i < 10000; i++) verify.failCount('junk' + i, true);
-  assert.strictEqual((await v({ action: 'check', ...base, rid: 'rfresh', code: '000000' })).code, 429);
+  const fresh = await v({ action: 'check', ...base, rid: 'rfresh', code: '000000' });
+  assert.strictEqual(fresh.code, 200); assert.strictEqual(fresh.body.ok, false);
+  assert.strictEqual((await v({ action: 'check', ...base, code: issued })).body.ok, true, '표가 가득 차도 진짜 학생은 인증됨');
   console.log('ok');
 })();
