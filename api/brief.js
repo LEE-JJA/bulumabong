@@ -42,17 +42,22 @@ function parseCard(text) {
   return { title, hours: Math.min(8, Math.max(1, Math.round(Number(j.hours)) || 2)), digital: j.digital === true };
 }
 
-// 유료 AI 키를 남이 마구 쓰지 못하게: IP당 1분 10번, 서버 전체 1분 60번
+// 유료 AI 키를 남이 마구 쓰지 못하게: IP당 1분 10번, 실제 AI 호출은 서버 전체 1분 300번
 const hits = new Map();
 let minute = 0, total = 0;
-function limited(req) {
+function tick() {
   const now = Math.floor(Date.now() / 60000);
   if (now !== minute) { minute = now; total = 0; hits.clear(); }
-  const ip = String(req.headers?.['x-forwarded-for'] || req.socket?.remoteAddress || '').split(',')[0].trim();
-  const n = (hits.get(ip) || 0) + 1;
-  hits.set(ip, n);
-  return n > 10 || ++total > 60;
 }
+function limited(req) {
+  tick();
+  // 클라이언트가 꾸밀 수 있는 X-Forwarded-For는 안 본다. Vercel에서는 플랫폼이 넣는 x-real-ip, 그 밖에는 접속 주소
+  const ip = String((process.env.VERCEL && req.headers?.['x-real-ip']) || req.socket?.remoteAddress || '');
+  const n = (hits.get(ip) || 0) + 1;
+  if (hits.size < 10000 || hits.has(ip)) hits.set(ip, n);
+  return n > 10;
+}
+function overBudget() { tick(); return ++total > 300; }
 
 async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST 요청만 받아요' });
@@ -72,6 +77,7 @@ async function handler(req, res) {
     user = `판세 데이터(JSON):\n${json}\n\n이 데이터로 작전 브리핑을 써 줘.`;
     shape = text => ({ text: text.trim() });
   }
+  if (overBudget()) return res.status(429).json({ error: '요청이 많아요. 잠시 뒤에 다시 해 주세요' });
   const provider = (process.env.AI_PROVIDER || (process.env.AWS_BEARER_TOKEN_BEDROCK ? 'bedrock' : 'openrouter')).toLowerCase();
   try {
     const text = provider === 'bedrock' ? await callBedrock(system, user) : await callOpenRouter(system, user);
