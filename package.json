@@ -1,0 +1,9 @@
+{
+  "name": "bulumabong",
+  "private": true,
+  "version": "0.1.0",
+  "description": "부루마봉: 원주권 대학 봉사 점령전 프로토타입",
+  "license": "MIT",
+  "scripts": { "start": "node server.js", "test": "node test.js" },
+  "engines": { "node": ">=18" }
+}

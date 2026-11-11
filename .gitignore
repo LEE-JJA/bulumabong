@@ -1,0 +1,5 @@
+node_modules/
+.env*
+.vercel/
+.claude/
+인수인계.md
