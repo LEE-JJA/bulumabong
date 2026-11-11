@@ -33,7 +33,37 @@ const call = async body => {
   assert.strictEqual(m('병원 예약 앱, 한 시간쯤, 2명 필요'), '병원 예약 앱, 한 시간쯤, 2명 필요');
   assert.strictEqual(brief.parseCard('{"title":"010-1111-2222 어르신 말벗","hours":2}').title, '[전화번호] 어르신 말벗');
   const html = require('fs').readFileSync(__dirname + '/index.html', 'utf8');
+  // 화면 스크립트에 문법 오류가 있으면 페이지 전체가 멈추니 여기서 잡는다
+  for (const [, code] of html.matchAll(/<script>([\s\S]*?)<\/script>/g)) new Function(code);
   const block = s => s.slice(s.indexOf('const PII = ['), s.indexOf('];', s.indexOf('const PII = [')));
   assert.strictEqual(block(html), block(require('fs').readFileSync(__dirname + '/api/brief.js', 'utf8')), 'index.html과 api/brief.js의 PII 규칙이 다릅니다');
+  // 확인 코드: 비밀값이 없으면 닫혀 있고, 있으면 담당자 키로 발급한 코드만 통과
+  const verify = require('./api/verify');
+  let ipN = 0;
+  const v = async body => {
+    const out = {};
+    const res = { status: c => { out.code = c; return res; }, json: o => { out.body = o; } };
+    await verify({ method: 'POST', body, headers: {}, socket: { remoteAddress: 'v' + ipN++ } }, res);
+    return out;
+  };
+  const base = { fid: 'f1', rid: 'rf1_0', date: '2026-11-12', hours: 2 };
+  delete process.env.CODE_SECRET;
+  assert.strictEqual((await v({ action: 'check', ...base, code: '123456' })).code, 503);
+  process.env.CODE_SECRET = 'test-secret';
+  const key = verify.facKey('test-secret', 'f1');
+  assert.strictEqual((await v({ action: 'issue', ...base, key: 'wrong' })).code, 403);
+  assert.strictEqual((await v({ action: 'issue', ...base, key: verify.facKey('test-secret', 'f2') })).code, 403, '다른 시설 키로는 발급 불가');
+  const issued = (await v({ action: 'issue', ...base, key })).body.code;
+  assert.match(issued, /^\d{6}$/);
+  const ok = (await v({ action: 'check', ...base, code: issued })).body;
+  assert.strictEqual(ok.ok, true); assert.ok(ok.receipt.length >= 20);
+  assert.strictEqual((await v({ action: 'check', ...base, hours: 3, code: issued })).body.ok, false, '시간을 부풀리면 실패');
+  assert.strictEqual((await v({ action: 'check', ...base, date: '2026-11-13', code: issued })).body.ok, false, '날짜가 다르면 실패');
+  assert.strictEqual((await v({ action: 'check', ...base, rid: 'rf1_1', code: issued })).body.ok, false, '다른 요청이면 실패');
+  assert.strictEqual((await v({ action: 'check', ...base, fid: 'f1|x', code: issued })).code, 400);
+  // 요청마다 10번 틀리면 IP를 바꿔도 잠긴다 (위에서 이 요청으로 이미 2번 틀림: 날짜·요청이 다른 건 다른 대상)
+  const lockBase = { ...base, rid: 'rlock' };
+  for (let i = 0; i < 10; i++) assert.strictEqual((await v({ action: 'check', ...lockBase, code: '000000' })).body.ok, false);
+  assert.strictEqual((await v({ action: 'check', ...lockBase, code: '000000' })).code, 429);
   console.log('ok');
 })();

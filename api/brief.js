@@ -55,21 +55,13 @@ function parseCard(text) {
 }
 
 // 유료 AI 키를 남이 마구 쓰지 못하게: IP당 1분 10번, 실제 AI 호출은 서버 전체 1분 300번
-const hits = new Map();
+const limited = require('./_limit')(10);
 let minute = 0, total = 0;
-function tick() {
+function overBudget() {
   const now = Math.floor(Date.now() / 60000);
-  if (now !== minute) { minute = now; total = 0; hits.clear(); }
+  if (now !== minute) { minute = now; total = 0; }
+  return ++total > 300;
 }
-function limited(req) {
-  tick();
-  // 클라이언트가 꾸밀 수 있는 X-Forwarded-For는 안 본다. Vercel에서는 플랫폼이 넣는 x-real-ip, 그 밖에는 접속 주소
-  const ip = String((process.env.VERCEL && req.headers?.['x-real-ip']) || req.socket?.remoteAddress || '');
-  const n = (hits.get(ip) || 0) + 1;
-  if (hits.size < 10000 || hits.has(ip)) hits.set(ip, n);
-  return n > 10;
-}
-function overBudget() { tick(); return ++total > 300; }
 
 async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST 요청만 받아요' });

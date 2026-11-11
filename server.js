@@ -3,7 +3,7 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const brief = require('./api/brief');
+const routes = { '/api/brief': require('./api/brief'), '/api/verify': require('./api/verify') };
 
 const PORT = process.env.PORT || 3000;
 
@@ -11,12 +11,13 @@ http.createServer((req, res) => {
   res.status = code => { res.statusCode = code; return res; };
   res.json = obj => { res.setHeader('Content-Type', 'application/json; charset=utf-8'); res.end(JSON.stringify(obj)); };
 
-  if (req.url.startsWith('/api/brief')) {
+  const api = routes[req.url.split('?')[0]];
+  if (api) {
     let raw = '';
     req.on('data', c => { raw += c; if (raw.length > 1e4) req.destroy(); }); // 큰 본문은 끊는다
     req.on('end', () => {
       try { req.body = raw ? JSON.parse(raw) : {}; } catch { req.body = {}; }
-      brief(req, res);
+      api(req, res);
     });
     return;
   }
