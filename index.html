@@ -413,8 +413,8 @@ h2{font-family:var(--display);font-weight:400;font-size:21px;letter-spacing:-.01
       <p class="sub" style="margin-bottom:14px">기관에서 받은 확인 코드로 인증하면 그 구역에 우리 대학 건물이 올라가요.</p>
       <form class="form" id="logForm" novalidate>
         <div class="field">
-          <label for="facSel">봉사한 기관</label>
-          <select id="facSel"></select>
+          <label for="reqSel">인증할 봉사</label>
+          <select id="reqSel"></select>
         </div>
         <div class="two">
           <div class="field">
@@ -437,7 +437,8 @@ h2{font-family:var(--display);font-weight:400;font-size:21px;letter-spacing:-.01
         </div>
         <div class="calc" id="calc"><div class="eq" id="calcEq"></div><div class="pts" id="calcPts"></div></div>
         <button class="btn" type="submit" id="submitBtn" style="width:100%">봉사 인증하기</button>
-        <p class="fine">건물은 2위와 3점 차면 2층, 6점 3층, 12점 4층, 24점 차면 5층까지 올라가요. 한 주 동안 그 구역에 봉사가 끊기면 한 층씩 내려앉아요.</p>
+        <p class="fine">건물은 2위와 3점 차면 2층, 6점 3층, 12점 4층, 24점 차면 5층까지 올라가요. 그 구역 시설이 요청을 올렸는데 한 주 동안 아무도 가지 않으면 한 층씩 내려앉아요.</p>
+        <p class="fine">점수는 신청한 요청으로만, 요청한 시간까지만 받아요. 같은 시설에 4주 안에 다시 오면 ×1.2, 보육원은 같은 곳 두 번째 방문부터 ×1.5예요.</p>
         <p class="fine">하루 최대 8시간까지 인정돼요. 시연에서는 아무 4자리 숫자나 확인 코드로 받아요.</p>
       </form>
     </section>
@@ -582,12 +583,21 @@ const HOME = Object.fromEntries(DATA.districts.map(d => { const P = DATA.proj; r
 const LIFE_KM = 8; // 캠퍼스 생활권: 집에서 8km 안 (가장 가까운 캠퍼스는 항상 포함)
 function homeKmTo(lon, lat) { const h = HOME[myHome]; return h ? hav(h.lon, h.lat, lon, lat) : Infinity; }
 // 내 점수의 거리 가산: 학생은 캠퍼스와 집 중 가까운 곳, 시민 서포터는 집에서 잰다
-function myMult(f) {
+// 아동 시설은 한 번 오고 끝나는 봉사가 아이들에게 부담이라, 처음 온 사람에게는 시설 가산을 주지 않는다
+const CHILD_TYPES = ['보육원'];
+// 같은 시설에 4주 안에 다시 오면 꾸준함 가산
+const REPEAT_DAYS = 28, REPEAT_MUL = 1.2;
+const todayStr = () => new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
+function myMult(f, date = todayStr()) {
   if (!myTeam) return mult('yonsei', f);
   const cKm = campusKm(myTeam, f), hKm = homeKmTo(f.lon, f.lat);
   const useHome = isFinite(hKm) && (myRole === 'citizen' || hKm < cKm);
   const km = useHome ? hKm : cKm;
-  return { km, from: useHome ? 'home' : 'campus', type: DATA.typeMul[f.type], dist: distMul(km), total: DATA.typeMul[f.type] * distMul(km) };
+  const prev = myLogs.filter(l => l.fid === f.id && l.date < date);
+  const firstChild = CHILD_TYPES.includes(f.type) && !prev.length;
+  const type = firstChild ? 1 : DATA.typeMul[f.type];
+  const repeat = prev.some(l => (Date.parse(date) - Date.parse(l.date)) / 864e5 <= REPEAT_DAYS) ? REPEAT_MUL : 1;
+  return { km, from: useHome ? 'home' : 'campus', type, firstChild, repeat, dist: distMul(km), total: type * distMul(km) * repeat };
 }
 function lifeCampuses() {
   if (!HOME[myHome]) return null;
@@ -604,8 +614,11 @@ const FLOOR_AT = [0, 3, 6, 12, 24];
 const MAX_FLOOR = FLOOR_AT.length;
 let simWeek = 0; const lastVisit = {};
 function districtActive(d) { return DATA.facilities.some(f => f.district === d && DATA.today[f.id]); }
+// 내려앉음은 시설이 도움을 청했는데(열린 요청) 아무도 가지 않은 구역에만. 요청이 없으면 봉사가 없어도 그대로
+function openSlots(r) { return r.need - r.filled - (applied.has(r.id) ? 1 : 0); }
+function districtOpen(d) { return REQS.some(r => FAC[r.fid].district === d && openSlots(r) > 0); }
 function idleWeeks(d) {
-  if (!simWeek) return 0;
+  if (!simWeek || !districtOpen(d)) return 0;
   const lv = d in lastVisit ? lastVisit[d] : (districtActive(d) ? simWeek : 0);
   return Math.max(0, simWeek - lv);
 }
@@ -1089,7 +1102,7 @@ function floorInfo(d) {
   const base = floorsFromMargin(S.margin[d]), n = S.floors[d], idle = S.idle[d], sec = S.second[d], mg = S.margin[d];
   const hrs = (team, x) => Math.max(1, Math.ceil(x / bestMul(team, d)));
   let rows = '';
-  if (idle) rows += `<dt>위세</dt><dd>${idle}주째 봉사가 끊겨 ${Math.min(idle, base)}층 내려앉았어요</dd>`;
+  if (idle) rows += `<dt>위세</dt><dd>요청이 열려 있는데 ${idle}주째 아무도 가지 않아 ${Math.min(idle, base)}층 내려앉았어요</dd>`;
   if (myTeam === lead) {
     if (base < MAX_FLOOR) { const x = FLOOR_AT[base] - mg; rows += `<dt>다음 층</dt><dd>${fmt(round1(x))}점 더 벌리면 ${base + 1}층 (약 ${hrs(myTeam, x)}시간)</dd>`; }
     else rows += `<dt>다음 층</dt><dd>최고층이에요</dd>`;
@@ -1125,13 +1138,14 @@ function renderInfo() {
     const act = DATA.today[f.id];
     const m = myTeam ? myMult(f) : null;
     box.innerHTML = closeBtn + `<h3>${esc(f.name)}</h3><p class="meta">${esc(f.district)}, ${esc(f.type)}</p>
-      <dl class="kv"><dt>시설 가산</dt><dd>${DATA.typeMul[f.type] > 1 ? `×${DATA.typeMul[f.type]}${DATA.typeMul[f.type] >= 1.5 ? ' (일손이 가장 부족한 곳)' : ''}` : f.type === '지역아동센터' ? '없음 (행정 보조 봉사 위주)' : '없음'}</dd>
+      <dl class="kv"><dt>시설 가산</dt><dd>${DATA.typeMul[f.type] > 1 ? `×${DATA.typeMul[f.type]}${CHILD_TYPES.includes(f.type) ? ' (같은 곳 두 번째 방문부터)' : DATA.typeMul[f.type] >= 1.5 ? ' (일손이 가장 부족한 곳)' : ''}` : f.type === '지역아동센터' ? '없음 (행정 보조 봉사 위주)' : '없음'}</dd>
+      <dt>다시 온 봉사</dt><dd>4주 안에 다시 오면 ×${REPEAT_MUL}${m && m.repeat > 1 ? ' (지금 받을 수 있어요)' : ''}</dd>
       ${m ? `<dt>거리 가산</dt><dd>×${m.dist} (${m.from === 'home' ? `집(${esc(myHome)})` : `${esc(TEAM[myTeam].short)} 캠퍼스`}에서 ${m.km.toFixed(1)}km)</dd>` : ''}
       <dt>오늘 활동</dt><dd>${act ? Object.entries(act).map(([tid, n]) => `${esc(TEAM[tid].short)} ${n}명`).join(', ') : '아직 없어요'}</dd></dl>
       ${s.length ? teamBars(s, s[0][1]) : '<p class="hint">아직 이 시설에 쌓인 점수가 없어요.</p>'}
       ${(() => { const rs = REQS.filter(r => r.fid === f.id); return rs.length ? `<div class="minireqs">${rs.map(reqRow).join('')}</div>` : ''; })()}
       <button class="btn line" type="button" id="goLog" style="margin-top:12px;width:100%">봉사를 마쳤다면 인증하기</button>`;
-    $('#goLog').addEventListener('click', () => { $('#facSel').value = f.id; updateCalc(); $('#log').scrollIntoView({ behavior: 'smooth', block: 'start' }); setTimeout(() => $('#codeIn').focus({ preventScroll: true }), 500); });
+    $('#goLog').addEventListener('click', () => { const r = REQS.find(x => x.fid === f.id && applied.has(x.id) && !loggedReqs().has(x.id)); if (!r) { toast('이 시설 요청에 먼저 신청해 주세요. 신청한 요청만 점수가 돼요'); return; } renderReqSel(r.id); hours = r.hours; updateCalc(); $('#log').scrollIntoView({ behavior: 'smooth', block: 'start' }); setTimeout(() => $('#codeIn').focus({ preventScroll: true }), 500); });
     return;
   }
   if (selected.kind === 'campus') {
@@ -1150,30 +1164,38 @@ function renderRank() {
 }
 /* ---------- log form ---------- */
 function buildForm() {
-  const sel = $('#facSel');
+  // 전화 요청 등록의 접수 기관 목록
   const groups = {};
   for (const f of DATA.facilities) (groups[f.district] = groups[f.district] || []).push(f);
-  sel.innerHTML = DIST_ORDER.filter(d => groups[d]).map(d => `<optgroup label="${esc(d)}">${groups[d].map(f => `<option value="${f.id}">${esc(f.name)} (${esc(f.type)})</option>`).join('')}</optgroup>`).join('') + `<optgroup label="원주 밖"><option value="${OUTSIDE}">원주 밖 기관 (본가 근처 등)</option></optgroup>`;
-  const tf = DATA.facilities.find(f => f.district === '판부면');
-  sel.value = tf ? tf.id : DATA.facilities[0].id;
-  const today = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
-  $('#dateIn').value = today; $('#dateIn').max = today;
-  sel.addEventListener('change', updateCalc);
-  $('#hrsDown').addEventListener('click', () => { hours = Math.max(1, hours - 1); updateCalc(); });
-  $('#hrsUp').addEventListener('click', () => { hours = Math.min(8, hours + 1); updateCalc(); });
-  $('#codeIn').addEventListener('input', e => { e.target.value = e.target.value.replace(/\D/g, '').slice(0, 4); $('#codeErr').textContent = ''; });
-  $('#logForm').addEventListener('submit', submitLog);
-  // 전화 요청 등록의 접수 기관: 같은 목록에서 '원주 밖'만 뺀다
-  const mf = $('#memoFac'); mf.innerHTML = sel.innerHTML; mf.lastElementChild.remove();
+  const mf = $('#memoFac');
+  mf.innerHTML = DIST_ORDER.filter(d => groups[d]).map(d => `<optgroup label="${esc(d)}">${groups[d].map(f => `<option value="${f.id}">${esc(f.name)} (${esc(f.type)})</option>`).join('')}</optgroup>`).join('');
   mf.value = (DATA.facilities.find(f => f.type === '노인복지관') || DATA.facilities[0]).id;
   $('#memoForm').addEventListener('submit', addMemoReq);
-  updateCalc();
+  const today = todayStr();
+  $('#dateIn').value = today; $('#dateIn').max = today;
+  $('#reqSel').addEventListener('change', () => { const r = REQS.find(x => x.id === $('#reqSel').value); if (r) hours = r.hours; updateCalc(); });
+  $('#dateIn').addEventListener('change', updateCalc);
+  $('#hrsDown').addEventListener('click', () => { hours = Math.max(1, hours - 1); updateCalc(); });
+  $('#hrsUp').addEventListener('click', () => { hours = Math.min(8, hours + 1); updateCalc(); });
+  $('#codeIn').addEventListener('input', e => { e.target.value = e.target.value.replace(/D/g, '').slice(0, 4); $('#codeErr').textContent = ''; });
+  $('#logForm').addEventListener('submit', submitLog);
+  renderReqSel();
+}
+// 점수는 신청한 요청으로만 받는다. 이미 인증한 요청은 다시 고를 수 없다
+const loggedReqs = () => new Set(myLogs.map(l => l.rid).filter(Boolean));
+function renderReqSel(pick) {
+  const sel = $('#reqSel'), keep = pick || sel.value, done = loggedReqs();
+  const mine = REQS.filter(r => applied.has(r.id) && !done.has(r.id));
+  sel.innerHTML = (mine.length ? `<optgroup label="신청한 요청">${mine.map(r => `<option value="${r.id}">${esc(FAC[r.fid].name)}: ${esc(r.title)} (${esc(r.when)})</option>`).join('')}</optgroup>` : '')
+    + `<optgroup label="점수 없이 기록만"><option value="${OUTSIDE}">신청 없이 한 봉사, 원주 밖 봉사</option></optgroup>`;
+  sel.value = mine.some(r => r.id === keep) ? keep : mine.length ? mine[0].id : OUTSIDE;
 }
 function preview() {
-  const fid = $('#facSel').value;
-  if (fid === OUTSIDE || !myTeam) return { fid, points: 0, out: fid === OUTSIDE };
-  const f = FAC[fid], m = myMult(f);
-  return { fid, f, m, points: round1(hours * m.total) };
+  const r = REQS.find(x => x.id === $('#reqSel').value);
+  if (!r) return { fid: OUTSIDE, points: 0, out: true };
+  if (!myTeam) return { r, fid: r.fid, points: 0 };
+  const f = FAC[r.fid], m = myMult(f, $('#dateIn').value || todayStr()), counted = Math.min(hours, r.hours);
+  return { r, fid: f.id, f, m, counted, points: round1(counted * m.total) };
 }
 function updateCalc() {
   $('#hrsOut').textContent = hours + '시간';
@@ -1181,13 +1203,16 @@ function updateCalc() {
   const calc = $('#calc');
   if (p.out) {
     calc.classList.add('out');
-    $('#calcEq').innerHTML = `원주 밖 봉사는 내 기록에는 남지만<br>대항전 점수에는 들어가지 않아요.`;
+    $('#calcEq').innerHTML = `신청한 요청이 아닌 봉사는 내 기록에만 남고<br>대항전 점수에는 들어가지 않아요.`;
     $('#calcPts').textContent = '+0점';
     return;
   }
   calc.classList.remove('out');
   if (!myTeam) { $('#calcEq').textContent = '대학을 먼저 골라 주세요.'; $('#calcPts').textContent = ''; return; }
-  $('#calcEq').innerHTML = `기본 ${hours}시간 × ${esc(p.f.type)} ${DATA.typeMul[p.f.type]}배 × 거리 ${p.m.dist}배<br><span style="color:var(--chalk-3)">${p.m.from === 'home' ? `집(${esc(myHome)})` : `${esc(TEAM[myTeam].short)} 캠퍼스`}에서 ${p.m.km.toFixed(1)}km</span>`;
+  const notes = [`${p.m.from === 'home' ? `집(${esc(myHome)})` : `${esc(TEAM[myTeam].short)} 캠퍼스`}에서 ${p.m.km.toFixed(1)}km`];
+  if (hours > p.r.hours) notes.push(`요청한 ${p.r.hours}시간까지만 점수에 들어가요`);
+  if (p.m.firstChild) notes.push(`아이들 시설은 같은 곳에 두 번째 오실 때부터 ×${DATA.typeMul[p.f.type]}예요`);
+  $('#calcEq').innerHTML = `기본 ${p.counted}시간 × ${esc(p.f.type)} ${p.m.type}배 × 거리 ${p.m.dist}배${p.m.repeat > 1 ? ` × 다시 온 봉사 ${p.m.repeat}배` : ''}<br><span style="color:var(--chalk-3)">${notes.join('<br>')}</span>`;
   $('#calcPts').textContent = '+' + fmt(p.points) + '점';
 }
 function submitLog(e) {
@@ -1201,7 +1226,7 @@ function submitLog(e) {
   const p = preview();
   const before = { ...S.leader }, fBefore = { ...S.floors };
   if (!p.out) lastVisit[FAC[p.fid].district] = simWeek;
-  myLogs.unshift({ id: Date.now(), fid: p.fid, team: myTeam, date, hours, points: p.points, mul: p.out ? null : round1(p.m.total) });
+  myLogs.unshift({ id: Date.now(), fid: p.fid, rid: p.out ? undefined : p.r.id, team: myTeam, date, hours, points: p.points, mul: p.out ? null : round1(p.m.total) });
   store.set('ttbb.logs', myLogs);
   const pBefore = Math.min(1, S.total / SEASON.goal);
   S = compute();
@@ -1221,7 +1246,7 @@ function submitLog(e) {
     toast(`${J(TEAM[S.leader[d0]].short, '과/와')}의 격차를 ${fBefore[d0] - S.floors[d0]}층만큼 좁혔어요`, true);
     select('district', d0); showMap();
   } else {
-    toast(p.out ? '원주 밖 봉사를 기록했어요' : `인증 완료 +${fmt(p.points)}점`);
+    toast(p.out ? '점수 없이 기록만 남겼어요' : `인증 완료 +${fmt(p.points)}점`);
   }
   if (Math.floor(Math.min(1, S.total / SEASON.goal) * 100) > Math.floor(pBefore * 100)) setTimeout(() => toast('은행잎이 조금 더 물들었어요'), flips.length ? 2800 : 2100);
 }
@@ -1245,7 +1270,7 @@ function briefFacts() {
   const chances = [];
   for (const f of DATA.facilities) {
     const d = f.district, lead = S.leader[d];
-    if (lead === myTeam) continue;
+    if (lead === myTeam || !REQS.some(r => r.fid === f.id && openSlots(r) > 0)) continue;
     const need = S.dist[d][lead] - S.dist[d][myTeam] + 0.1;
     const m = myMult(f);
     const h = Math.ceil(need / m.total);
@@ -1372,11 +1397,12 @@ async function addMemoReq(e) {
 }
 function reqPts(r) { return myTeam ? round1(r.hours * myMult(FAC[r.fid]).total) : r.hours; }
 function reqRow(r) {
-  const f = FAC[r.fid], on = applied.has(r.id), filled = r.filled + (on ? 1 : 0);
+  const f = FAC[r.fid], on = applied.has(r.id), filled = r.filled + (on ? 1 : 0), done = loggedReqs().has(r.id), full = !on && openSlots(r) <= 0;
+  const label = done ? '인증함' : on ? '신청함' : full ? '마감' : '신청하기';
   return `<div class="req"><div><div class="req-title">${r.digital ? '<span class="tag">디지털 동행</span>' : ''}${esc(r.title)}</div>
     <div class="req-meta">${esc(f.name)}, ${r.when}, ${r.hours}시간</div>
     <div class="req-meta dim">${filled}/${r.need}명 신청. ${REQ_SRC[r.src]}</div></div>
-    <div class="req-side"><span class="req-pts">+${fmt(reqPts(r))}점</span><button type="button" class="btn small${on ? ' line' : ''}" data-apply="${r.id}" aria-pressed="${on}">${on ? '신청함' : '신청하기'}</button></div></div>`;
+    <div class="req-side"><span class="req-pts">+${fmt(reqPts(r))}점</span><button type="button" class="btn small${on || full ? ' line' : ''}" data-apply="${r.id}" aria-pressed="${on}"${full || done ? ' disabled' : ''}>${label}</button></div></div>`;
 }
 function renderReqs() {
   let list = REQS.filter(r => reqFilter === 'digital' ? r.digital : reqFilter === 'short' ? DATA.typeMul[FAC[r.fid].type] >= 1.5 : true);
@@ -1387,10 +1413,12 @@ function renderReqs() {
 function toggleApply(id) {
   if (!myTeam) { openTeam(); return; }
   const r = REQS.find(x => x.id === id);
-  if (applied.has(id)) { applied.delete(id); toast('신청을 취소했어요'); }
+  if (loggedReqs().has(id)) { toast('이미 인증한 요청이에요'); return; }
+  if (applied.has(id)) { applied.delete(id); renderReqSel(); updateCalc(); toast('신청을 취소했어요'); }
   else {
+    if (openSlots(r) <= 0) { toast('필요한 인원이 다 찼어요'); return; }
     applied.add(id);
-    $('#facSel').value = r.fid; hours = r.hours; updateCalc();
+    renderReqSel(id); hours = r.hours; updateCalc();
     toast(`신청했어요. ${r.when.split(' ').slice(0, 3).join(' ')}에 기관에서 확인 코드를 받아 인증해 주세요`);
   }
   store.set('ttbb.applied', [...applied]);
@@ -1546,7 +1574,7 @@ function sceneWeek() {
   simWeek++;
   S = compute(); renderAll(); zoomTo('all'); showMap(); select(null);
   const dropped = Object.keys(before).filter(d => S.floors[d] < before[d]);
-  toast(dropped.length ? `봉사가 끊긴 ${dropped.length}곳에서 건물이 한 층씩 내려앉았어요` : '모든 구역에 봉사가 이어지고 있어요');
+  toast(dropped.length ? `열린 요청에 아무도 가지 않은 ${dropped.length}곳에서 건물이 한 층씩 내려앉았어요` : '열린 요청이 있는 구역마다 봉사가 이어지고 있어요');
 }
 async function sceneSeasonEnd() {
   closeTest();
@@ -1643,7 +1671,7 @@ function openTest() { $('#testPanel').classList.add('open'); $('#testFab').setAt
 function closeTest() { $('#testPanel').classList.remove('open'); $('#testFab').setAttribute('aria-expanded', 'false'); }
 
 /* ---------- boot ---------- */
-function renderAll() { renderSeason(); renderMap(); renderInfo(); renderReqs(); renderRank(); renderRecord(); renderPerks(); renderPass(); renderMe(); updateCalc(); }
+function renderAll() { renderSeason(); renderMap(); renderInfo(); renderReqs(); renderRank(); renderRecord(); renderPerks(); renderPass(); renderMe(); renderReqSel(); updateCalc(); }
 buildTree(); buildMap(); buildForm(); renderAll();
 let placeT = 0;
 if ('ResizeObserver' in window) new ResizeObserver(() => { reserve = targetReserve(); paintView(); clearTimeout(placeT); placeT = setTimeout(() => { placeBuildings(); applyScale(); }, 250); }).observe($('#map'));
