@@ -18,7 +18,7 @@ const SYSTEM = [
 ].join('\n');
 
 // facts는 브라우저가 보낸 값이라 그대로 믿지 않는다: 글자 수와 개수를 잘라 긴 지시문을 못 끼워 넣게 한다
-// shortcut: 호출 횟수 제한 없음, 공개 운영 전에 IP당 제한(API Gateway 등)을 붙일 것
+// shortcut: 호출 제한은 서버 메모리 안에서만 센다(서버리스는 인스턴스마다 따로), 공개 운영 전에 API Gateway 등 앞단 제한과 키 사용 한도를 걸 것
 const clean = v => typeof v === 'string' ? v.slice(0, 40)
   : Array.isArray(v) ? v.slice(0, 20).map(clean)
   : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).slice(0, 30).map(([k, x]) => [k.slice(0, 40), clean(x)]))
@@ -42,8 +42,21 @@ function parseCard(text) {
   return { title, hours: Math.min(8, Math.max(1, Math.round(Number(j.hours)) || 2)), digital: j.digital === true };
 }
 
+// 유료 AI 키를 남이 마구 쓰지 못하게: IP당 1분 10번, 서버 전체 1분 60번
+const hits = new Map();
+let minute = 0, total = 0;
+function limited(req) {
+  const now = Math.floor(Date.now() / 60000);
+  if (now !== minute) { minute = now; total = 0; hits.clear(); }
+  const ip = String(req.headers?.['x-forwarded-for'] || req.socket?.remoteAddress || '').split(',')[0].trim();
+  const n = (hits.get(ip) || 0) + 1;
+  hits.set(ip, n);
+  return n > 10 || ++total > 60;
+}
+
 async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST 요청만 받아요' });
+  if (limited(req)) return res.status(429).json({ error: '요청이 많아요. 잠시 뒤에 다시 해 주세요' });
   const body = req.body || {};
   let system, user, shape;
   if (typeof body.memo === 'string' && body.memo.trim()) {
@@ -64,7 +77,8 @@ async function handler(req, res) {
     const text = provider === 'bedrock' ? await callBedrock(system, user) : await callOpenRouter(system, user);
     return res.status(200).json({ ...shape(text), provider });
   } catch (e) {
-    return res.status(502).json({ error: String((e && e.message) || e) });
+    console.error('AI 호출 실패:', (e && e.message) || e); // 자세한 내용은 서버 로그에만
+    return res.status(502).json({ error: 'AI 서버에 연결하지 못했어요' });
   }
 }
 
