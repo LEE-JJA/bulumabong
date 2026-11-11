@@ -1,4 +1,4 @@
-// POST /api/brief : 앱이 계산한 판세(facts)를 받아 AI 작전 브리핑 문장을 돌려줍니다.
+// POST /api/brief : 앱이 계산한 판세(facts)를 받아 AI 봉사 브리핑 문장을 돌려줍니다.
 // Vercel 서버리스 함수로 그대로 동작하고, 로컬에서는 server.js가 이 파일을 불러 씁니다.
 //
 // 환경변수
@@ -10,11 +10,12 @@
 //   AI_PROVIDER            bedrock 또는 openrouter로 강제 지정 (보통은 비워 두세요)
 
 const SYSTEM = [
-  "너는 원주권 대학 봉사 점령전 앱 '부루마봉'의 작전 참모야.",
+  "너는 원주권 대학 봉사 대항전 앱 '부루마봉'의 봉사 길잡이야.",
+  '겨루는 것은 대학끼리의 봉사 시간이야. 시설, 어르신, 아이를 빼앗거나 차지하는 대상처럼 말하지 말고, 점령, 뺏다, 허물다, 무너뜨리다, 공격, 작전 같은 말은 쓰지 마.',
   '주어진 판세 데이터로 우리 대학 학생에게 브리핑을 3문단 이내, 문단마다 1~2문장으로 써.',
   '규칙: 데이터에 있는 숫자와 이름만 쓰고 새 숫자를 지어내지 마. 과장과 명령조는 피하고 20대에게 말하듯 친근한 존댓말로 써. 이모지와 마크다운은 쓰지 마.',
-  '이 앱은 부루마블처럼 구역마다 점령한 대학의 건물이 서. 2위와의 점수 차가 클수록 층이 올라가고(최대 5층), 따라잡히면 한 층씩 내려앉아. 땅, 건물, 층이라는 말을 자연스럽게 써.',
-  '1문단: 우리 대학 순위, 점령 구역 수, 세운 건물 층수 합계(floorsTotal). 2문단: 가장 빨리 뺏을 수 있는 땅과 시설, 필요한 시간, 붙는 가산점. 3문단: 가장 위태로운 우리 건물(defend: floors층, pointsToLoseFloor점이면 내려앉음 또는 1층이면 빼앗김)과 지키는 방법(있을 때만).'
+  '이 앱은 부루마블처럼 구역마다 1위 대학의 건물이 서. 2위와의 점수 차가 클수록 층이 올라가고(최대 5층), 따라잡히면 한 층씩 내려앉아. 구역, 건물, 층이라는 말을 자연스럽게 써.',
+  '1문단: 우리 대학 순위, 1위 구역 수, 세운 건물 층수 합계(floorsTotal). 2문단: 가장 빨리 1위가 될 수 있는 구역과 그곳의 시설, 필요한 시간, 붙는 가산점. 3문단: 가장 위태로운 우리 건물(defend: floors층, pointsToLoseFloor점이면 내려앉음 또는 1층이면 1위가 바뀜)과 지키는 방법(있을 때만).'
 ].join('\n');
 
 // facts는 브라우저가 보낸 값이라 그대로 믿지 않는다: 글자 수와 개수를 잘라 긴 지시문을 못 끼워 넣게 한다
@@ -33,11 +34,22 @@ const MEMO_SYSTEM = [
   '제목에 사람 이름, 전화번호, 주소는 넣지 마. 메모에 걸리는 시간이 없으면 hours는 2로 해.'
 ].join('\n');
 
+// 전화 메모의 개인정보를 가린다. index.html의 maskPII와 같은 규칙(바꾸면 둘 다)
+// shortcut: 이름은 못 가린다(규칙으로 구분이 안 됨), 화면 안내와 담당자 교육에 기댄다
+const PII = [
+  [/\d{6}[-\s]?[1-4]\d{6}/g, '[주민번호]'],
+  [/(?:\+?82[-.\s]?)?0\d{1,2}[-.\s]?\d{3,4}[-.\s]?\d{4}/g, '[전화번호]'],
+  [/\d{1,4}\s?동\s?\d{1,4}\s?호/g, '[동·호수]'],
+  [/[가-힣\d]+(?:로|길)(?:\s?\d+번길)?\s?\d+(?:-\d+)?(?:번지)?/g, '[주소]'],
+  [/\d+(?:-\d+)?\s?번지/g, '[주소]']
+];
+const maskPII = s => PII.reduce((t, [re, to]) => t.replace(re, to), String(s));
+
 // 모델 답은 믿지 않는다: JSON만 꺼내고 값의 종류와 범위를 맞춘다. 못 읽으면 던져서 화면이 규칙으로 넘어가게 한다
 function parseCard(text) {
   const m = String(text).match(/\{[\s\S]*\}/);
   const j = JSON.parse(m ? m[0] : '');
-  const title = String(j.title || '').replace(/\s+/g, ' ').trim().slice(0, 40);
+  const title = maskPII(j.title || '').replace(/\s+/g, ' ').trim().slice(0, 40);
   if (!title) throw new Error('요청 제목이 비어 있어요');
   return { title, hours: Math.min(8, Math.max(1, Math.round(Number(j.hours)) || 2)), digital: j.digital === true };
 }
@@ -66,7 +78,7 @@ async function handler(req, res) {
   let system, user, shape;
   if (typeof body.memo === 'string' && body.memo.trim()) {
     system = MEMO_SYSTEM;
-    user = `전화 메모:\n${body.memo.slice(0, 300)}`;
+    user = `전화 메모:\n${maskPII(body.memo.slice(0, 300))}`;
     shape = text => ({ request: parseCard(text) });
   } else {
     const facts = body.facts;
@@ -74,7 +86,7 @@ async function handler(req, res) {
     const json = JSON.stringify(clean(facts));
     if (json.length > 3000) return res.status(400).json({ error: 'facts가 너무 커요' });
     system = SYSTEM;
-    user = `판세 데이터(JSON):\n${json}\n\n이 데이터로 작전 브리핑을 써 줘.`;
+    user = `판세 데이터(JSON):\n${json}\n\n이 데이터로 봉사 브리핑을 써 줘.`;
     shape = text => ({ text: text.trim() });
   }
   if (overBudget()) return res.status(429).json({ error: '요청이 많아요. 잠시 뒤에 다시 해 주세요' });
@@ -128,3 +140,4 @@ async function callBedrock(system, user) {
 module.exports = handler;
 module.exports.clean = clean;
 module.exports.parseCard = parseCard;
+module.exports.maskPII = maskPII;

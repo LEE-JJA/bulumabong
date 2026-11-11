@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>부루마봉 · 원주 봉사 점령전</title>
+<title>부루마봉 · 원주 봉사 대항전</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
@@ -320,10 +320,10 @@ h2{font-family:var(--display);font-weight:400;font-size:21px;letter-spacing:-.01
 </header>
 
 <div class="layout">
-  <section class="stage" id="mapcard" aria-label="점령 지도">
+  <section class="stage" id="mapcard" aria-label="봉사 지도">
    <div class="mapwrap">
     <div class="ov mapbanner" id="mapBanner"></div>
-    <svg id="map" role="group" aria-label="원주시 읍면동 점령 지도"></svg>
+    <svg id="map" role="group" aria-label="원주시 읍면동 봉사 지도"></svg>
     <div class="ov zoomtabs" role="group" aria-label="지도 범위">
       <button type="button" data-zoom="all" aria-pressed="true">원주 전체</button>
       <button type="button" data-zoom="town" aria-pressed="false">시내 확대</button>
@@ -383,14 +383,14 @@ h2{font-family:var(--display);font-weight:400;font-size:21px;letter-spacing:-.01
             <button class="btn" type="submit" id="memoBtn">요청 카드 만들기</button>
             <span class="brief-src" id="memoSrc"></span>
           </div>
-          <p class="fine">AI가 메모를 읽어 할 일, 시간, 디지털 동행 여부를 정리해요. 어르신 이름, 전화번호, 주소는 적지 마세요. 시연에서는 누구나 올려 볼 수 있어요.</p>
+          <p class="fine">AI가 메모를 읽어 할 일, 시간, 디지털 동행 여부를 정리해요. 어르신 이름은 적지 마세요. 전화번호, 주민번호, 상세 주소는 보내기 전에 자동으로 가려요.</p>
         </form>
       </details>
     </section>
 
     <section class="sec" id="brief" aria-labelledby="briefTitle">
-      <div class="sec-head"><h2 id="briefTitle">작전 브리핑</h2><span class="sub">AI가 판세를 읽어요</span></div>
-      <div class="brief-body empty" id="briefBody">점수 차가 가장 작은 구역과, 한 번의 봉사로 뒤집을 수 있는 시설을 찾아 드려요.</div>
+      <div class="sec-head"><h2 id="briefTitle">봉사 브리핑</h2><span class="sub">AI가 판세를 읽어요</span></div>
+      <div class="brief-body empty" id="briefBody">점수 차가 가장 작은 구역과, 한 번의 봉사로 1위가 바뀌는 구역과 그곳의 시설을 찾아 드려요.</div>
       <div class="brief-row">
         <button class="btn" type="button" id="briefBtn">브리핑 받기</button>
         <span class="brief-src" id="briefSrc"></span>
@@ -512,11 +512,11 @@ h2{font-family:var(--display);font-weight:400;font-size:21px;letter-spacing:-.01
     </div>
   </div>
   <div class="tgroup" style="padding-top:2px">
-    <button class="tbtn" type="button" id="tCapture"><b>구역 점령 장면</b><span>우리 대학이 가장 가까운 구역을 뒤집는 순간</span></button>
-    <button class="tbtn" type="button" id="tRaid"><b>라이벌 역습 장면</b><span>2위 대학이 우리 건물을 한 층씩 무너뜨리는 순간</span></button>
+    <button class="tbtn" type="button" id="tCapture"><b>구역 1위 장면</b><span>우리 대학이 가장 가까운 구역에서 1위가 되는 순간</span></button>
+    <button class="tbtn" type="button" id="tRaid"><b>다른 대학 추격 장면</b><span>2위 대학이 따라와 우리 건물이 한 층씩 내려앉는 순간</span></button>
     <button class="tbtn" type="button" id="tWeek"><b>한 주 흐르기</b><span>봉사가 끊긴 구역의 건물이 한 층씩 내려앉아요</span></button>
     <button class="tbtn" type="button" id="tSeasonEnd"><b>시즌 종료 장면</b><span>잎이 다 물들고 떨어진 뒤 결산 발표</span></button>
-    <button class="tbtn" type="button" id="tEffect"><b>점령 효과 바로 보기</b><span>결산 1위 대학의 표식이 지도에 남은 모습</span></button>
+    <button class="tbtn" type="button" id="tEffect"><b>우승 표식 바로 보기</b><span>결산 1위 대학의 표식이 지도에 남은 모습</span></button>
     <button class="tbtn" type="button" id="tReset" style="border-bottom:0"><b>처음 상태로</b><span>시연으로 바꾼 값을 모두 되돌려요</span></button>
   </div>
 </div>
@@ -525,10 +525,10 @@ h2{font-family:var(--display);font-weight:400;font-size:21px;letter-spacing:-.01
   <canvas id="fw" aria-hidden="true"></canvas>
   <div class="sheet">
     <h2 id="resultTitle">2026 시즌 결산</h2>
-    <p class="sub">반계리 은행나무가 다 물들어 시즌이 끝났어요. 점령 구역 수로 순위를 정하고, 같으면 총점을 봐요.</p>
+    <p class="sub">반계리 은행나무가 다 물들어 시즌이 끝났어요. 1위 구역 수로 순위를 정하고, 같으면 총점을 봐요.</p>
     <div class="result-win" id="resultWin"></div>
     <div class="podium" id="podium"></div>
-    <button class="btn" type="button" id="resultGo" style="width:100%">지도에서 점령 효과 보기</button>
+    <button class="btn" type="button" id="resultGo" style="width:100%">지도에서 우승 표식 보기</button>
   </div>
 </div>
 <script>
@@ -766,7 +766,7 @@ function renderSeason() {
     : `원주 대학생과 시민이 쌓은 봉사 <b>${fmt(Math.round(S.total))}점</b>으로 잎의 ${pct}%가 물들었어요.`;
   renderTimeline();
   const c = TEAM[champion.team];
-  $('#champ').innerHTML = `${emb(c, 18)}<span><b>${esc(c.name)}</b>${hasJong(c.name) ? '이' : '가'} ${champion.season} 시즌을 점령했어요. 지도의 하얀 표식은 ${champion.season + 1} 시즌 결산까지 남아요.</span>`;
+  $('#champ').innerHTML = `${emb(c, 18)}<span><b>${esc(c.name)}</b>${hasJong(c.name) ? '이' : '가'} ${champion.season} 시즌에 우승했어요. 지도의 하얀 표식은 ${champion.season + 1} 시즌 결산까지 남아요.</span>`;
   renderBanner();
   paintTree(p);
 }
@@ -785,7 +785,7 @@ function renderTimeline() {
 function renderBanner() {
   const c = TEAM[champion.team];
   const b = $('#mapBanner');
-  b.innerHTML = `${emb(c, 22)}<span><b>${champion.season} 시즌 점령 ${esc(c.short)}</b><br><span style="color:var(--chalk-3)">하얀 표식은 ${champion.season + 1} 시즌 결산까지 남아요</span></span>`;
+  b.innerHTML = `${emb(c, 22)}<span><b>${champion.season} 시즌 우승 ${esc(c.short)}</b><br><span style="color:var(--chalk-3)">하얀 표식은 ${champion.season + 1} 시즌 결산까지 남아요</span></span>`;
   b.classList.toggle('fresh', !!champion.fresh);
   b.style.borderLeftColor = champion.fresh ? c.color : '';
   const city = document.querySelector('#map .city');
@@ -966,7 +966,7 @@ function renderMap() {
     const standing = lead && S.floors[d.name] > 0;
     p.setAttribute('fill', lead ? TEAM[lead].color : '#2B4A35');
     p.setAttribute('fill-opacity', standing ? '.46' : lead ? '.16' : '1');
-    p.setAttribute('aria-label', `${d.name}, ${standing ? TEAM[lead].short + ' ' + S.floors[d.name] + '층 건물' : lead ? '빈 부지' : '점령 대학 없음'}`);
+    p.setAttribute('aria-label', `${d.name}, ${standing ? TEAM[lead].short + ' ' + S.floors[d.name] + '층 건물' : lead ? '빈 부지' : '1위 대학 없음'}`);
     p.classList.toggle('sel', !!(selected && selected.kind === 'district' && selected.id === d.name));
   }
   for (const g of markerEls) {
@@ -1069,7 +1069,7 @@ function zoomTo(target) {
 }
 function renderLegend() {
   const items = DATA.teams.map(t => ({ t, n: S.teams[t.id].terr })).sort((a, b) => b.n - a.n);
-  $('#legend').innerHTML = items.map(({ t, n }) => `<span><i style="background:${t.color}"></i>${esc(t.short)} ${n}구역</span>`).join('') + `<span><i style="background:#2F5139;border:1px solid rgba(244,242,233,.4)"></i>미점령</span>`;
+  $('#legend').innerHTML = items.map(({ t, n }) => `<span><i style="background:${t.color}"></i>${esc(t.short)} ${n}구역</span>`).join('') + `<span><i style="background:#2F5139;border:1px solid rgba(244,242,233,.4)"></i>1위 없음</span>`;
 }
 
 /* ---------- info panel ---------- */
@@ -1094,12 +1094,12 @@ function floorInfo(d) {
     if (base < MAX_FLOOR) { const x = FLOOR_AT[base] - mg; rows += `<dt>다음 층</dt><dd>${fmt(round1(x))}점 더 벌리면 ${base + 1}층 (약 ${hrs(myTeam, x)}시간)</dd>`; }
     else rows += `<dt>다음 층</dt><dd>최고층이에요</dd>`;
     const y = mg - FLOOR_AT[base - 1] + .1;
-    rows += `<dt>위험</dt><dd>${esc(J(TEAM[sec].short, '이/가'))} ${fmt(round1(y))}점 쌓으면 ${base > 1 ? '한 층 내려앉아요' : '뒤집혀요'}</dd>`;
+    rows += `<dt>위험</dt><dd>${esc(J(TEAM[sec].short, '이/가'))} ${fmt(round1(y))}점 쌓으면 ${base > 1 ? '한 층 내려앉아요' : '1위가 바뀌어요'}</dd>`;
   } else if (myTeam) {
     const mine = v[myTeam];
-    if (base > 1) { const x = v[lead] - FLOOR_AT[base - 1] - mine + .1; rows += `<dt>한 층 허물기</dt><dd>${fmt(round1(x))}점 (약 ${hrs(myTeam, x)}시간)</dd>`; }
+    if (base > 1) { const x = v[lead] - FLOOR_AT[base - 1] - mine + .1; rows += `<dt>격차 한 층 좁히기</dt><dd>${fmt(round1(x))}점 (약 ${hrs(myTeam, x)}시간)</dd>`; }
     const z = v[lead] - mine + .1;
-    rows += `<dt>뒤집기</dt><dd>${fmt(round1(z))}점 (약 ${hrs(myTeam, z)}시간)</dd>`;
+    rows += `<dt>1위 되기</dt><dd>${fmt(round1(z))}점 (약 ${hrs(myTeam, z)}시간)</dd>`;
   }
   return rows ? `<dl class="kv">${rows}</dl>` : '';
 }
@@ -1107,15 +1107,15 @@ function renderInfo() {
   const box = $('#info');
   box.classList.toggle('idle', !selected);
   const closeBtn = '<button type="button" class="x" id="infoX" aria-label="정보 닫기">×</button>';
-  if (!selected) { box.innerHTML = `<p class="hint">구역이나 하얀 원(봉사 시설), 대학 표식을 눌러 보세요. 누가 점령 중인지, 몇 점 차인지, 그곳에서 받는 가산점을 알려 드려요.</p>`; return; }
+  if (!selected) { box.innerHTML = `<p class="hint">구역이나 하얀 원(봉사 시설), 대학 표식을 눌러 보세요. 어느 대학이 1위인지, 몇 점 차인지, 그곳에서 받는 가산점을 알려 드려요.</p>`; return; }
   if (selected.kind === 'district') {
     const d = selected.id, v = S.dist[d];
-    if (!v) { box.innerHTML = closeBtn + `<h3>${esc(d)}</h3><p class="meta">아직 등록된 봉사 시설이 없는 구역이에요.</p><p class="hint">시설이 등록되면 이 구역에서도 점령전이 시작돼요.</p>`; return; }
+    if (!v) { box.innerHTML = closeBtn + `<h3>${esc(d)}</h3><p class="meta">아직 등록된 봉사 시설이 없는 구역이에요.</p><p class="hint">시설이 등록되면 이 구역에서도 대항전이 시작돼요.</p>`; return; }
     const s = Object.entries(v).sort((a, b) => b[1] - a[1]).slice(0, 3);
     const lead = S.leader[d];
     const facs = DATA.facilities.filter(f => f.district === d);
     const gap = floorInfo(d);
-    box.innerHTML = closeBtn + `<h3>${esc(d)}</h3><p class="meta">${lead ? (S.floors[d] ? `${esc(TEAM[lead].name)} ${S.floors[d]}층 건물` : `${esc(TEAM[lead].short)}의 빈 부지`) : '점령 대학 없음'}</p>${gap}${teamBars(s, s[0][1])}<div class="facs">${facs.map(f => `<button type="button" class="facbtn" data-fac="${f.id}"><span>${esc(f.name)}</span><span>${esc(f.type)}</span></button>`).join('')}</div>`;
+    box.innerHTML = closeBtn + `<h3>${esc(d)}</h3><p class="meta">${lead ? (S.floors[d] ? `${esc(TEAM[lead].name)} ${S.floors[d]}층 건물` : `${esc(TEAM[lead].short)}의 빈 부지`) : '1위 대학 없음'}</p>${gap}${teamBars(s, s[0][1])}<div class="facs">${facs.map(f => `<button type="button" class="facbtn" data-fac="${f.id}"><span>${esc(f.name)}</span><span>${esc(f.type)}</span></button>`).join('')}</div>`;
     box.querySelectorAll('[data-fac]').forEach(b => b.addEventListener('click', () => select('facility', b.dataset.fac)));
     return;
   }
@@ -1137,7 +1137,7 @@ function renderInfo() {
   if (selected.kind === 'campus') {
     const c = DATA.campuses.find(x => x.name === selected.id), t = TEAM[c.team], st = S.teams[c.team];
     box.innerHTML = closeBtn + `<h3>${esc(c.name)}</h3><p class="meta">${esc(c.snippet.replace(/ · /g, ', '))}</p>${IMG[c.name] ? `<img class="campus-img" src="${IMG[c.name]}" alt="${esc(c.name)} 특징을 그린 일러스트">` : ''}
-      <dl class="kv"><dt>팀 점수</dt><dd>${fmt(Math.round(st.pts))}점</dd><dt>점령 구역</dt><dd>${st.terr}곳</dd>${c.team === champion.team ? `<dt>표식</dt><dd>${champion.season} 시즌 점령 대학</dd>` : ''}</dl>
+      <dl class="kv"><dt>팀 점수</dt><dd>${fmt(Math.round(st.pts))}점</dd><dt>1위 구역</dt><dd>${st.terr}곳</dd>${c.team === champion.team ? `<dt>표식</dt><dd>${champion.season} 시즌 우승 대학</dd>` : ''}</dl>
       <p class="hint">${esc(c.desc)}</p>`;
   }
 }
@@ -1181,7 +1181,7 @@ function updateCalc() {
   const calc = $('#calc');
   if (p.out) {
     calc.classList.add('out');
-    $('#calcEq').innerHTML = `원주 밖 봉사는 내 기록에는 남지만<br>점령전 점수에는 들어가지 않아요.`;
+    $('#calcEq').innerHTML = `원주 밖 봉사는 내 기록에는 남지만<br>대항전 점수에는 들어가지 않아요.`;
     $('#calcPts').textContent = '+0점';
     return;
   }
@@ -1211,14 +1211,14 @@ function submitLog(e) {
   const d0 = p.out ? null : FAC[p.fid].district;
   if (flips.length) {
     flips.forEach(d => { const el = distEls[d]; el.classList.remove('flash'); void el.getBBox(); el.classList.add('flash'); });
-    toast(`${flips[0]} 점령! ${S.floors[flips[0]] > 1 ? S.floors[flips[0]] + '층까지 올려요' : '1층을 세웠어요'}`, true);
+    toast(`${flips[0]} 1위! ${S.floors[flips[0]] > 1 ? S.floors[flips[0]] + '층까지 올려요' : '1층을 세웠어요'}`, true);
     select('district', flips[0]);
     showMap();
   } else if (d0 && S.leader[d0] === myTeam && S.floors[d0] > (fBefore[d0] || 0)) {
     toast(`${d0} ${S.floors[d0]}층으로 증축했어요`, true);
     select('district', d0); showMap();
   } else if (d0 && S.leader[d0] !== myTeam && S.floors[d0] < (fBefore[d0] || 0)) {
-    toast(`${TEAM[S.leader[d0]].short} 건물을 ${fBefore[d0] - S.floors[d0]}층 허물었어요`, true);
+    toast(`${J(TEAM[S.leader[d0]].short, '과/와')}의 격차를 ${fBefore[d0] - S.floors[d0]}층만큼 좁혔어요`, true);
     select('district', d0); showMap();
   } else {
     toast(p.out ? '원주 밖 봉사를 기록했어요' : `인증 완료 +${fmt(p.points)}점`);
@@ -1230,7 +1230,7 @@ function submitLog(e) {
 function renderRecord() {
   const hrs = myLogs.reduce((a, l) => a + l.hours, 0);
   const pts = myLogs.reduce((a, l) => a + l.points, 0);
-  $('#lvl').innerHTML = `인증한 봉사 <b>${fmt(hrs)}시간</b>, 점령전 점수 <b>${fmt(round1(pts))}점</b>`;
+  $('#lvl').innerHTML = `인증한 봉사 <b>${fmt(hrs)}시간</b>, 대항전 점수 <b>${fmt(round1(pts))}점</b>`;
   $('#logs').innerHTML = myLogs.length ? myLogs.map(l => {
     const name = l.fid === OUTSIDE ? '원주 밖 기관' : (FAC[l.fid] ? FAC[l.fid].name : '알 수 없는 기관');
     return `<div class="logrow"><span>${esc(name)}</span><span class="p">${l.fid === OUTSIDE ? '기록만' : '+' + fmt(l.points) + '점'}</span><span class="d">${esc(l.date)}, ${l.hours}시간${l.mul ? ', 가산 ×' + l.mul : ''}</span><span class="d" style="text-align:right">${esc(TEAM[l.team].short)}</span></div>`;
@@ -1266,14 +1266,14 @@ function briefFacts() {
 }
 function localBrief(x) {
   const a = x.rivalAhead
-    ? `${J(x.short, '은/는')} 지금 ${x.teams}개 대학 중 ${x.rank}위, ${x.territories}구역을 점령 중이에요. 바로 위 ${J(x.rival, '과는/와는')} ${fmt(x.rivalGap)}점 차예요.`
-    : `${J(x.short, '은/는')} 지금 1위, ${x.territories}구역을 점령 중이에요. 2위 ${J(x.rival, '과는/와는')} ${fmt(x.rivalGap)}점 차예요.`;
+    ? `${J(x.short, '은/는')} 지금 ${x.teams}개 대학 중 ${x.rank}위이고, 구역 ${x.territories}곳에서 1위예요. 바로 위 ${J(x.rival, '과는/와는')} ${fmt(x.rivalGap)}점 차예요.`
+    : `${J(x.short, '은/는')} 지금 전체 1위이고, 구역 ${x.territories}곳에서 1위예요. 2위 ${J(x.rival, '과는/와는')} ${fmt(x.rivalGap)}점 차예요.`;
   const a2 = ` 지금 세운 건물은 모두 ${x.floorsTotal}층이에요.`;
   const b = x.best
-    ? `가장 빨리 뺏을 수 있는 땅은 ${J(x.best.district, '이에요/예요')}. ${J(x.best.leader, '이/가')} ${fmt(x.best.gap)}점 앞서 있는데, ${x.best.facility}에서 ${x.best.hoursNeeded}시간 봉사하면 ${x.best.type} ${x.best.typeMul}배와 거리 ${x.best.distMul}배가 붙어 그 자리에 우리 건물 1층이 올라가요.`
-    : '지금은 모든 구역을 점령하고 있어요.';
+    ? `가장 빨리 1위가 될 수 있는 구역은 ${J(x.best.district, '이에요/예요')}. ${J(x.best.leader, '이/가')} ${fmt(x.best.gap)}점 앞서 있는데, ${x.best.facility}에서 ${x.best.hoursNeeded}시간 봉사하면 ${x.best.type} ${x.best.typeMul}배와 거리 ${x.best.distMul}배가 붙어 그 자리에 우리 건물 1층이 올라가요.`
+    : '지금은 모든 구역에서 1위예요.';
   const c = x.defend
-    ? `${x.defend.district}의 ${x.defend.floors}층 건물이 가장 위태로워요. ${J(x.defend.chaser, '이/가')} ${fmt(x.defend.pointsToLoseFloor)}점만 쌓으면 ${x.defend.floors > 1 ? '한 층 내려앉아요' : '건물을 통째로 빼앗겨요'}. ${x.defend.facility}에서 2시간만 봉사해도 격차가 ${fmt(x.defend.after)}점으로 벌어져요.`
+    ? `${x.defend.district}의 ${x.defend.floors}층 건물이 가장 위태로워요. ${J(x.defend.chaser, '이/가')} ${fmt(x.defend.pointsToLoseFloor)}점만 쌓으면 ${x.defend.floors > 1 ? '한 층 내려앉아요' : '1위가 바뀌어요'}. ${x.defend.facility}에서 2시간만 봉사해도 격차가 ${fmt(x.defend.after)}점으로 벌어져요.`
     : '';
   return [a + a2, b, c].filter(Boolean).join('\n\n');
 }
@@ -1336,13 +1336,22 @@ const REQS = (() => {
 })();
 // 전화 메모로 올린 요청(mine)은 이 브라우저에 남긴다
 REQS.unshift(...store.get('ttbb.reqs', []).filter(r => FAC[r.fid]));
+// 전화 메모의 개인정보를 브라우저에서 먼저 가린다. api/brief.js의 PII와 같은 규칙(바꾸면 둘 다)
+const PII = [
+  [/\d{6}[-\s]?[1-4]\d{6}/g, '[주민번호]'],
+  [/(?:\+?82[-.\s]?)?0\d{1,2}[-.\s]?\d{3,4}[-.\s]?\d{4}/g, '[전화번호]'],
+  [/\d{1,4}\s?동\s?\d{1,4}\s?호/g, '[동·호수]'],
+  [/[가-힣\d]+(?:로|길)(?:\s?\d+번길)?\s?\d+(?:-\d+)?(?:번지)?/g, '[주소]'],
+  [/\d+(?:-\d+)?\s?번지/g, '[주소]']
+];
+const maskPII = s => PII.reduce((t, [re, to]) => t.replace(re, to), String(s));
 // AI가 못 읽을 때 쓰는 규칙: 디지털 낱말이 있으면 디지털 동행, 시간은 2시간
 function localCard(memo) {
   return { title: memo.replace(/\s+/g, ' ').slice(0, 30), hours: 2, digital: /스마트폰|휴대폰|핸드폰|키오스크|앱|어플|카카오|문자|인터넷|예약/.test(memo) };
 }
 async function addMemoReq(e) {
   e.preventDefault();
-  const memo = $('#memoIn').value.trim(), btn = $('#memoBtn');
+  const raw = $('#memoIn').value.trim(), memo = maskPII(raw), btn = $('#memoBtn');
   if (memo.length < 5) { $('#memoErr').textContent = '전화 내용을 조금 더 적어 주세요.'; $('#memoIn').focus(); return; }
   $('#memoErr').textContent = '';
   btn.disabled = true; btn.textContent = '메모 읽는 중…';
@@ -1356,7 +1365,7 @@ async function addMemoReq(e) {
   REQS.unshift({ id: 'm' + Date.now(), fid: $('#memoFac').value, title: String(card.title), hours: Math.min(8, Math.max(1, Math.round(card.hours) || 2)), digital: !!card.digital, src: 'phone',
     when: `${d.getUTCMonth() + 1}월 ${d.getUTCDate()}일 (${'일월화수목금토'[d.getUTCDay()]}) 14시`, need: 1, filled: 0, mine: Date.now() }); // mine: 올린 시각, 최근 것이 위로
   store.set('ttbb.reqs', REQS.filter(r => r.mine));
-  $('#memoIn').value = ''; $('#memoSrc').textContent = src;
+  $('#memoIn').value = ''; $('#memoSrc').textContent = src + (memo !== raw ? ' 전화번호·주소는 가리고 보냈어요.' : '');
   btn.disabled = false; btn.textContent = '요청 카드 만들기';
   document.querySelector('[data-req="all"]').click(); // 거르기를 풀어 새 요청이 맨 위에 보이게
   toast(`요청을 올렸어요${card.digital ? ' (디지털 동행)' : ''}`);
@@ -1492,7 +1501,7 @@ async function sceneCapture() {
   if (!myTeam) { openTeam(); return; }
   closeTest();
   const c = bestCapture();
-  if (!c) { toast('우리 대학이 이미 모든 구역을 점령하고 있어요'); return; }
+  if (!c) { toast('우리 대학이 이미 모든 구역에서 1위예요'); return; }
   zoomTo(['문막읍','지정면','호저면','소초면','부론면','귀래면','흥업면','판부면','신림면'].includes(c.d) ? 'all' : 'town');
   showMap();
   select('district', c.d);
@@ -1502,7 +1511,7 @@ async function sceneCapture() {
   S = compute(); renderAll();
   const el = distEls[c.d]; el.classList.remove('flash'); void el.getBBox(); el.classList.add('flash');
   select('district', c.d);
-  toast(`${c.d} 점령! ${S.floors[c.d] > 1 ? S.floors[c.d] + '층까지 올려요' : '1층을 세웠어요'}`, true);
+  toast(`${c.d} 1위! ${S.floors[c.d] > 1 ? S.floors[c.d] + '층까지 올려요' : '1층을 세웠어요'}`, true);
 }
 const RURAL = ['문막읍','지정면','호저면','소초면','부론면','귀래면','흥업면','판부면','신림면'];
 const wait = ms => new Promise(r => setTimeout(r, ms));
@@ -1520,16 +1529,16 @@ async function sceneRaid() {
   const mine = Object.keys(S.leader).filter(d => S.leader[d] === myTeam && S.floors[d] >= 2);
   const pool = mine.length ? mine : Object.keys(S.leader).filter(d => S.floors[d] >= 2);
   const d = pool.sort((a, b) => S.floors[b] - S.floors[a] || (RURAL.includes(b) - RURAL.includes(a)))[0];
-  if (!d) { toast('무너뜨릴 건물이 아직 없어요'); return; }
+  if (!d) { toast('따라잡을 건물이 아직 없어요'); return; }
   const owner = S.leader[d], raider = S.second[d];
   zoomTo(RURAL.includes(d) ? 'all' : 'town'); showMap(); select('district', d);
   await wait(900);
   await hitDistrict(raider, d, S.margin[d] - 1.5);
-  toast(`${TEAM[raider].short} 역습! ${d} 건물이 내려앉고 있어요`, true);
+  toast(`${TEAM[raider].short} 추격! ${d} 건물이 내려앉고 있어요`, true);
   await wait(2600);
   await hitDistrict(raider, d, 3);
   const el = distEls[d]; el.classList.remove('flash'); void el.getBBox(); el.classList.add('flash');
-  toast(owner === myTeam ? `${d}${hasJong(d) ? '을' : '를'} ${TEAM[raider].short}에 빼앗겼어요` : `${TEAM[raider].short}${hasJong(TEAM[raider].short) ? '이' : '가'} ${d}${hasJong(d) ? '을' : '를'} 빼앗았어요`, true);
+  toast(owner === myTeam ? `${d} 1위를 ${TEAM[raider].short}에 내줬어요` : `${TEAM[raider].short}${hasJong(TEAM[raider].short) ? '이' : '가'} ${d} 1위가 됐어요`, true);
 }
 function sceneWeek() {
   closeTest();
@@ -1604,7 +1613,7 @@ function openResults() {
   const list = standings();
   const w = list[0];
   $('#resultTitle').textContent = `${SEASON.year} 시즌 결산`;
-  $('#resultWin').innerHTML = `${emb(w.t, 46)}<div><strong>${esc(w.t.name)}</strong><span class="sub">${w.terr}구역 점령, 총 ${fmt(Math.round(w.pts))}점으로 ${SEASON.year} 시즌을 점령했어요</span></div>`;
+  $('#resultWin').innerHTML = `${emb(w.t, 46)}<div><strong>${esc(w.t.name)}</strong><span class="sub">${w.terr}구역 1위, 총 ${fmt(Math.round(w.pts))}점으로 ${SEASON.year} 시즌에 우승했어요</span></div>`;
   $('#podium').innerHTML = list.slice(0, 3).map((x, i) => `<div><span class="n">${i + 1}</span>${emb(x.t, 18)}<span>${esc(x.t.name)}</span><span class="v">${x.terr}구역, ${fmt(Math.round(x.pts))}점</span></div>`).join('');
   $('#resultModal').classList.add('open');
   fireworks([w.t.color, shade(w.t.color, .35), '#F2C230', '#F2C230', '#F2F0E6']);
@@ -1620,7 +1629,7 @@ function showEffect() {
   showMap();
   const camp = DATA.campuses.find(c => c.team === w.t.id);
   select('campus', camp.name);
-  setTimeout(() => toast(`${w.t.short} 점령 효과가 ${SEASON.year + 1} 시즌 결산까지 지도에 남아요`), 400);
+  setTimeout(() => toast(`${w.t.short} 우승 표식이 ${SEASON.year + 1} 시즌 결산까지 지도에 남아요`), 400);
 }
 function resetTest() {
   testProgress = null; testLogs = []; champion = { ...DEFAULT_CHAMP };

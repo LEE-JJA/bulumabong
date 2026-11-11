@@ -24,5 +24,16 @@ const call = async body => {
   assert.deepStrictEqual(brief.parseCard('{"title":"말벗","hours":99,"digital":"yes"}'), { title: '말벗', hours: 8, digital: false });
   assert.throws(() => brief.parseCard('죄송하지만 도와드릴 수 없어요'));
   assert.throws(() => brief.parseCard('{"hours":2}'));
+  // 개인정보 가리기: 서버와 화면이 같은 규칙인지도 본다
+  const m = brief.maskPII;
+  assert.strictEqual(m('010-1234-5678로 연락, 033 742 1234도'), '[전화번호]로 연락, [전화번호]도');
+  assert.strictEqual(m('주민번호 450101-2345678'), '주민번호 [주민번호]');
+  assert.strictEqual(m('단구로 123 주공아파트 101동 202호'), '[주소] 주공아파트 [동·호수]');
+  assert.strictEqual(m('흥업면 매지리 123-4번지'), '흥업면 매지리 [주소]');
+  assert.strictEqual(m('병원 예약 앱, 한 시간쯤, 2명 필요'), '병원 예약 앱, 한 시간쯤, 2명 필요');
+  assert.strictEqual(brief.parseCard('{"title":"010-1111-2222 어르신 말벗","hours":2}').title, '[전화번호] 어르신 말벗');
+  const html = require('fs').readFileSync(__dirname + '/index.html', 'utf8');
+  const block = s => s.slice(s.indexOf('const PII = ['), s.indexOf('];', s.indexOf('const PII = [')));
+  assert.strictEqual(block(html), block(require('fs').readFileSync(__dirname + '/api/brief.js', 'utf8')), 'index.html과 api/brief.js의 PII 규칙이 다릅니다');
   console.log('ok');
 })();
