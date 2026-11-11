@@ -31,7 +31,11 @@ const call = async body => {
   assert.strictEqual(m('단구로 123 주공아파트 101동 202호'), '[주소] 주공아파트 [동·호수]');
   assert.strictEqual(m('흥업면 매지리 123-4번지'), '흥업면 매지리 [주소]');
   assert.strictEqual(m('병원 예약 앱, 한 시간쯤, 2명 필요'), '병원 예약 앱, 한 시간쯤, 2명 필요');
-  assert.strictEqual(brief.parseCard('{"title":"010-1111-2222 어르신 말벗","hours":2}').title, '[전화번호] 어르신 말벗');
+  // 요청 카드는 익명: 이름과 연락처는 제목에서 빠진다
+  assert.strictEqual(brief.parseCard('{"title":"010-1111-2222 어르신 말벗","hours":2}').title, '어르신 말벗');
+  assert.strictEqual(brief.parseCard('{"title":"김영자 할머니 병원 예약 돕기","hours":2}').title, '할머니 병원 예약 돕기');
+  assert.strictEqual(m('김영자 할머니, 박씨 할아버지, 최순자님'), '[이름] 할머니, [이름] 할아버지, [이름]님');
+  assert.strictEqual(m('혼자 사시는 할머니, 도움이 필요한 어르신, 선생님'), '혼자 사시는 할머니, 도움이 필요한 어르신, 선생님');
   const html = require('fs').readFileSync(__dirname + '/index.html', 'utf8');
   // 화면 스크립트에 문법 오류가 있으면 페이지 전체가 멈추니 여기서 잡는다
   for (const [, code] of html.matchAll(/<script>([\s\S]*?)<\/script>/g)) new Function(code);

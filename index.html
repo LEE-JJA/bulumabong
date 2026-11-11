@@ -384,7 +384,7 @@ h2{font-family:var(--display);font-weight:400;font-size:21px;letter-spacing:-.01
             <button class="btn" type="submit" id="memoBtn">요청 카드 만들기</button>
             <span class="brief-src" id="memoSrc"></span>
           </div>
-          <p class="fine">AI가 메모를 읽어 할 일, 시간, 디지털 동행 여부를 정리해요. 어르신 이름은 적지 마세요. 전화번호, 주민번호, 상세 주소는 보내기 전에 자동으로 가려요.</p>
+          <p class="fine">AI가 메모를 읽어 할 일, 시간, 디지털 동행 여부를 정리해요. 요청은 익명으로 올라가요. 어르신 성함은 적지 마세요. 성함, 전화번호, 주민번호, 상세 주소는 보내기 전에 자동으로 가리고, 학생에게 보이는 제목에는 넣지 않아요.</p>
         </form>
         <form class="form" id="issueForm" novalidate>
           <h3 class="flabel" style="margin-top:18px">봉사 확인 코드 발급</h3>
@@ -574,10 +574,16 @@ const TEAM = Object.fromEntries(DATA.teams.map(t => [t.id, t]));
 const FAC = Object.fromEntries(DATA.facilities.map(f => [f.id, f]));
 const DIST_ORDER = ['문막읍','지정면','호저면','소초면','부론면','귀래면','흥업면','판부면','신림면','우산동','태장1동','태장2동','단계동','학성동','일산동','중앙동','원인동','개운동','명륜1동','명륜2동','단구동','봉산동','행구동','무실동','반곡관설동'];
 
+/* ---------- 시연 모드 ---------- */
+// 주소 끝이 #test면 시연 모드: 요청 날짜가 오늘, 확인 코드는 서버 없이 이 브라우저에서 발급·확인(무대에서 인터넷이 끊겨도 됨),
+// 기록은 실제 기록과 따로 저장. 실사용 흐름(서버 확인)은 그대로 두고 이 값으로만 갈라진다
+const DEMO = location.hash === '#test';
+
 /* ---------- storage ---------- */
+const sk = k => DEMO ? k.replace(/^ttbb\./, 'ttbb.demo.') : k;
 const store = {
-  get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
-  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+  get(k, d) { try { const v = localStorage.getItem(sk(k)); return v ? JSON.parse(v) : d; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(sk(k), JSON.stringify(v)); } catch {} }
 };
 let myTeam = store.get('ttbb.team', null);
 let myRole = store.get('ttbb.role', 'student');
@@ -1261,12 +1267,19 @@ async function issueCode(e) {
   const r = REQS.find(x => x.id === $('#issueReq').value), key = $('#issueKey').value.trim(), err = $('#issueErr');
   err.textContent = ''; $('#issueOut').textContent = '';
   if (!r) { err.textContent = '코드를 발급할 요청을 골라 주세요.'; return; }
-  if (!key) { err.textContent = '기관 키를 입력해 주세요.'; $('#issueKey').focus(); return; }
+  if (!key && !DEMO) { err.textContent = '기관 키를 입력해 주세요.'; $('#issueKey').focus(); return; }
   const j = await callVerify({ action: 'issue', fid: r.fid, rid: r.id, date: r.date, hours: +$('#issueHrs').value, key });
   if (j.code) $('#issueOut').textContent = j.code; else err.textContent = j.error;
 }
+// 시연 모드의 확인 코드: 서버 대신 이 브라우저에서 같은 정보로 같은 코드를 만든다. 보안 기능이 아니라 무대용
+function demoVerify(b) {
+  const code = String([...[b.fid, b.rid, b.date, b.hours].join('|')].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7) % 1e6).padStart(6, '0');
+  if (b.action === 'issue') return { code };
+  return b.code === code ? { ok: true, receipt: 'demo' } : { ok: false, error: '확인 코드가 맞지 않아요. 날짜와 봉사 시간이 기관이 발급한 것과 같은지 봐 주세요' };
+}
 // 서버 확인 코드 API. 연결이 안 되면 그렇다고 돌려준다
 async function callVerify(body) {
+  if (DEMO) return demoVerify(body);
   try {
     const r = await fetch('/api/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: AbortSignal.timeout(9000) });
     return await r.json();
@@ -1417,7 +1430,7 @@ const REQS = (() => {
     const n = f.type === '노인복지관' ? 3 : (f.type === '요양원' && i % 3 === 0) || f.type === '푸드뱅크' ? 2 : 1;
     for (let k = 0; k < Math.min(n, tpl.length); k++) {
       const [title, hours, digital, src] = tpl[(i + k) % tpl.length];
-      const d = new Date(Date.now() + 9 * 3600e3 + (1 + (i * 5 + k * 3) % 10) * 864e5);
+      const d = new Date(Date.now() + 9 * 3600e3 + (DEMO ? 0 : 1 + (i * 5 + k * 3) % 10) * 864e5);
       const need = 2 + (i + k) % 3;
       out.push({ id: `r${f.id}_${k}`, fid: f.id, title, hours, digital: !!digital, src: src || 'org', date: d.toISOString().slice(0, 10),
         when: `${d.getUTCMonth() + 1}월 ${d.getUTCDate()}일 (${wd[d.getUTCDay()]}) ${[10, 14, 16][(i + k) % 3]}시`, need, filled: (i * 7 + k) % need });
@@ -1433,12 +1446,15 @@ const PII = [
   [/(?:\+?82[-.\s]?)?0\d{1,2}[-.\s]?\d{3,4}[-.\s]?\d{4}/g, '[전화번호]'],
   [/\d{1,4}\s?동\s?\d{1,4}\s?호/g, '[동·호수]'],
   [/[가-힣\d]+(?:로|길)(?:\s?\d+번길)?\s?\d+(?:-\d+)?(?:번지)?/g, '[주소]'],
-  [/\d+(?:-\d+)?\s?번지/g, '[주소]']
+  [/\d+(?:-\d+)?\s?번지/g, '[주소]'],
+  [/(^|[\s,.(])[김이박최정강조윤장임한오서신권황안송류유홍전고문양손배백허남심노하곽성차주우구민진나지엄채원천방공현함변염여추도소석설마길연위표명기반라왕금옥육인맹제모탁국어은편용][가-힣]{0,2}(?=\s?(?:할머니|할아버지|어르신|여사|님|씨))/g, '$1[이름]']
 ];
 const maskPII = s => PII.reduce((t, [re, to]) => t.replace(re, to), String(s));
-// AI가 못 읽을 때 쓰는 규칙: 디지털 낱말이 있으면 디지털 동행, 시간은 2시간
+// AI가 못 읽을 때 쓰는 규칙: 디지털 낱말이 있으면 디지털 동행, 시간은 2시간.
+// 메모 원문은 학생에게 공개되는 제목이 되면 안 되니(익명), 정해 둔 제목만 쓴다
 function localCard(memo) {
-  return { title: memo.replace(/\s+/g, ' ').slice(0, 30), hours: 2, digital: /스마트폰|휴대폰|핸드폰|키오스크|앱|어플|카카오|문자|인터넷|예약/.test(memo) };
+  const digital = /스마트폰|휴대폰|핸드폰|키오스크|앱|어플|카카오|문자|인터넷|예약/.test(memo);
+  return { title: digital ? '어르신 디지털 기기 사용 돕기' : '어르신 생활 돕기 (자세한 내용은 기관에 문의)', hours: 2, digital };
 }
 async function addMemoReq(e) {
   e.preventDefault();
@@ -1452,7 +1468,7 @@ async function addMemoReq(e) {
     if (r.ok) { const j = await r.json(); if (j.request) { card = j.request; src = `AI(${({ bedrock: 'Amazon Bedrock', openrouter: 'OpenRouter' })[j.provider] || 'LLM'})가 메모를 요청 카드로 정리했어요.`; } }
   } catch {}
   if (!card) { card = localCard(memo); src = 'AI 서버에 연결되지 않아 규칙으로 정리했어요.'; }
-  const d = new Date(Date.now() + 9 * 3600e3 + 3 * 864e5);
+  const d = new Date(Date.now() + 9 * 3600e3 + (DEMO ? 0 : 3) * 864e5);
   REQS.unshift({ id: 'm' + Date.now(), fid: $('#memoFac').value, title: String(card.title), hours: Math.min(8, Math.max(1, Math.round(card.hours) || 2)), digital: !!card.digital, src: 'phone', date: d.toISOString().slice(0, 10),
     when: `${d.getUTCMonth() + 1}월 ${d.getUTCDate()}일 (${'일월화수목금토'[d.getUTCDay()]}) 14시`, need: 1, filled: 0, mine: Date.now() }); // mine: 올린 시각, 최근 것이 위로
   store.set('ttbb.reqs', REQS.filter(r => r.mine));
@@ -1767,7 +1783,11 @@ $('#tReset').addEventListener('click', resetTest);
 $('#resultGo').addEventListener('click', showEffect);
 document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeTest(); if ($('#resultModal').classList.contains('open')) showEffect(); } });
 if (!myTeam) openTeam();
-if (location.hash === '#test') openTest();
+if (DEMO) {
+  openTest();
+  $('#issueKey').placeholder = '시연 모드에서는 비워 두셔도 돼요';
+  setTimeout(() => toast('시연 모드예요. 요청은 오늘 날짜이고, 기록은 실제 기록과 따로 저장돼요'), 600);
+} else $('#resetBtn').hidden = true; // 실사용에서는 기록을 지우는 버튼을 두지 않는다
 if (Date.now() > SEASON.end.getTime() && !store.get('bmb.result' + SEASON.year, false)) {
   store.set('bmb.result' + SEASON.year, true);
   setTimeout(() => { if (!$('#teamModal').classList.contains('open')) openResults(); }, 1200);
