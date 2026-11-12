@@ -13,11 +13,15 @@
 const SYSTEM = [
   "너는 원주권 대학 봉사 대항전 앱 '부루마봉'의 봉사 길잡이야.",
   '겨루는 것은 대학끼리의 봉사 시간이야. 시설, 어르신, 아이를 빼앗거나 차지하는 대상처럼 말하지 말고, 점령, 뺏다, 차지하다, 확보하다, 허물다, 무너뜨리다, 공격, 방어, 공략, 작전, 전략, 인력 배치 같은 말은 쓰지 마.',
+  '순위는 "2위예요", "5개 구역에서 1위예요"처럼 말하고, 구역은 "1위가 될 수 있어요", 건물은 "지킬 수 있어요", "내려앉을 수 있어요"처럼 말해.',
   '주어진 판세 데이터로 우리 대학 학생에게 브리핑을 3문단 이내, 문단마다 1~2문장으로 써.',
   '규칙: 데이터에 있는 숫자와 이름만 쓰고 새 숫자를 지어내지 마. 과장과 명령조는 피하고 20대에게 말하듯 친근한 존댓말로 쓰고, 모든 문장을 "~요"로 끝내(반말 금지). 이모지와 마크다운은 쓰지 마.',
   '이 앱은 부루마블처럼 구역마다 1위 대학의 건물이 서. 2위와의 점수 차가 클수록 층이 올라가고(최대 5층), 따라잡히면 한 층씩 내려앉아. 구역, 건물, 층이라는 말을 자연스럽게 써.',
   '1문단: 우리 대학 순위, 1위 구역 수, 세운 건물 층수 합계(floorsTotal). 2문단: 가장 빨리 1위가 될 수 있는 구역과 그곳의 시설, 필요한 시간, 붙는 가산점. 3문단: 가장 위태로운 우리 건물(defend: floors층, pointsToLoseFloor점이면 내려앉음 또는 1층이면 1위가 바뀜)과 지키는 방법(있을 때만).'
 ].join('\n');
+
+// 지시문만으로는 모델이 가끔 어겨서, 브리핑 답에 이 말이 있으면 화면에 내보내지 않는다 (README "화면 디자인 원칙"의 말투 규칙)
+const BANNED = /점령|뺏|빼앗|정복|탈환|공격|공략|역습|습격|허물|무너뜨|작전|전략|확보|방어|차지/;
 
 // facts는 브라우저가 보낸 값이라 그대로 믿지 않는다: 글자 수와 개수를 잘라 긴 지시문을 못 끼워 넣게 한다
 // shortcut: 호출 제한은 서버 메모리 안에서만 센다(서버리스는 인스턴스마다 따로), 공개 운영 전에 API Gateway 등 앞단 제한과 키 사용 한도를 걸 것
@@ -82,12 +86,20 @@ async function handler(req, res) {
     if (json.length > 3000) return res.status(400).json({ error: 'facts가 너무 커요' });
     system = SYSTEM;
     user = `판세 데이터(JSON):\n${json}\n\n이 데이터로 봉사 브리핑을 써 줘.`;
-    shape = text => ({ text: text.trim() });
+    shape = text => {
+      const bad = text.match(BANNED);
+      if (bad) throw new Error('브리핑에 쓰지 않기로 한 말: ' + bad[0]);
+      return { text: text.trim() };
+    };
   }
   if (overBudget()) return res.status(429).json({ error: '요청이 많아요. 잠시 뒤에 다시 해 주세요' });
   const provider = (process.env.AI_PROVIDER || (process.env.AWS_BEARER_TOKEN_BEDROCK ? 'bedrock' : 'openrouter')).toLowerCase();
   try {
-    const text = provider === 'bedrock' ? await callBedrock(system, user) : await callOpenRouter(system, user);
+    const ask = u => provider === 'bedrock' ? callBedrock(system, u) : callOpenRouter(system, u);
+    let text = await ask(user);
+    // 브리핑에 금지한 말이 나오면 한 번만 다시 쓰게 한다. 또 나오면 shape가 던져서 화면이 규칙 문장으로 넘어간다
+    const bad = system === SYSTEM && text.match(BANNED);
+    if (bad) text = await ask(`${user}\n\n방금 쓴 답에 "${bad[0]}"처럼 쓰지 않기로 한 말이 들어 있었어. 그런 말 없이 처음부터 다시 써 줘.`);
     return res.status(200).json({ ...shape(text), provider });
   } catch (e) {
     console.error('AI 호출 실패:', (e && e.message) || e); // 자세한 내용은 서버 로그에만

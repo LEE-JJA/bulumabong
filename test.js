@@ -116,5 +116,22 @@ const call = async body => {
   await hit();
   assert.strictEqual(calls.length, 2, '20초 안에는 다시 부르지 않음');
   global.fetch = realFetch; delete process.env.DATA_GO_KR_KEY;
+  // 브리핑 말투: 모델이 금지한 말을 쓰면 한 번 다시 쓰게 하고, 또 쓰면 내보내지 않는다(화면은 규칙 문장으로 넘어감)
+  process.env.AWS_BEARER_TOKEN_BEDROCK = 't';
+  let answers = [], asked = [];
+  global.fetch = async (u, o) => { asked.push(JSON.parse(o.body).messages[0].content[0].text); return { ok: true, json: async () => ({ output: { message: { content: [{ text: answers.shift() }] } } }) }; };
+  const ai = async body => { const o = {}; const r = { status: c => { o.code = c; return r; }, json: b => { o.body = b; } }; await brief({ method: 'POST', body, headers: {}, socket: { remoteAddress: 'ai' } }, r); return o; };
+  answers = ['신림면을 점령하러 가요.', '신림면에서 1위가 될 수 있어요.'];
+  let out = await ai({ facts: { team: '연세' } });
+  assert.strictEqual(out.code, 200); assert.strictEqual(out.body.text, '신림면에서 1위가 될 수 있어요.');
+  assert.strictEqual(asked.length, 2); assert.ok(asked[1].includes('"점령"'), '다시 물을 때 어떤 말이 문제였는지 알려 줌');
+  answers = ['구역을 확보해요.', '전략을 세워요.']; asked = [];
+  out = await ai({ facts: { team: '연세' } });
+  assert.strictEqual(out.code, 502, '두 번 다 금지어면 내보내지 않음'); assert.strictEqual(asked.length, 2);
+  answers = ['우리 대학은 2위예요.']; asked = [];
+  assert.strictEqual((await ai({ facts: { team: '연세' } })).body.text, '우리 대학은 2위예요.'); assert.strictEqual(asked.length, 1);
+  answers = ['{"title":"어르신 전략 게임 돕기","hours":1}']; asked = [];
+  assert.strictEqual((await ai({ memo: '전략 게임 알려 달라고 하심' })).body.request.title, '어르신 전략 게임 돕기', '요청 카드에는 이 규칙을 걸지 않음');
+  global.fetch = realFetch; delete process.env.AWS_BEARER_TOKEN_BEDROCK;
   console.log('ok');
 })();
