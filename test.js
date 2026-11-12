@@ -87,5 +87,17 @@ const call = async body => {
   assert.strictEqual(fresh.code, 200); assert.strictEqual(fresh.body.ok, false);
   assert.strictEqual((await v({ action: 'check', ...base, code: issued })).body.ok, true, '표가 가득 차도 진짜 학생은 인증됨');
   assert.strictEqual((await v({ action: 'check', ...lockBase, code: '000000' })).code, 429, '표를 채워도 잠긴 요청은 그대로 잠김');
+  // 1365 모집 정보: 모집 중이고 끝나지 않은 것만, 끝나는 날이 가까운 순서
+  const vol = require('./api/vol');
+  const item = (no, sj, st, end) => `<item><nanmmbyNm>원주&amp;센터</nanmmbyNm><progrmBgnde>20261101</progrmBgnde><progrmEndde>${end}</progrmEndde><progrmRegistNo>${no}</progrmRegistNo><progrmSj>${sj}</progrmSj><progrmSttusSe>${st}</progrmSttusSe></item>`;
+  const xml = `<response><header><resultCode>00</resultCode></header><body><items>${item(1, '늦게 끝남', 2, '20261130')}${item(2, '모집 완료', 3, '20261130')}${item(3, '이미 끝남', 2, '20261101')}${item('x', '번호 이상', 2, '20261130')}${item(4, '곧 끝남 &lt;b&gt;', 2, '20261115')}</items></body></response>`;
+  const got = vol.parse(xml, '2026-11-12');
+  assert.deepStrictEqual(got.map(v => v.title), ['곧 끝남 <b>', '늦게 끝남']);
+  assert.deepStrictEqual(got[0], { no: '4', title: '곧 끝남 <b>', org: '원주&센터', from: '2026-11-01', to: '2026-11-15', url: 'https://1365.go.kr/vols/P9210/partcptn/timeCptn.do?type=show&progrmRegistNo=4' });
+  assert.throws(() => vol.parse('<response><header><resultCode>30</resultCode></header></response>', '2026-11-12'));
+  delete process.env.DATA_GO_KR_KEY;
+  const vo = {}; const vres = { status: c => { vo.code = c; return vres; }, json: o => { vo.body = o; } };
+  await vol({ method: 'GET', headers: {}, socket: { remoteAddress: 'vol' } }, vres);
+  assert.strictEqual(vo.code, 503, '키가 없으면 닫힘');
   console.log('ok');
 })();
