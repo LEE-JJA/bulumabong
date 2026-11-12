@@ -1,15 +1,17 @@
-# 부루마봉 시연 영상 녹화
+# 부루마봉 발표용 시연 영상
 
-Windows의 Microsoft Edge와 Node.js 18 이상이 필요합니다. 영상은 배포된 `https://bulumabong.vercel.app`의 `#test` 시연 모드를 새 브라우저 컨텍스트에서 녹화합니다. 학생·기관 화면은 한 컨텍스트의 같은 페이지로 이동하므로 요청 저장소가 이어집니다.
+Windows의 Microsoft Edge, Node.js 18 이상, Python, 인터넷 연결이 필요합니다. `http://3.106.70.230`의 `#test` 시연 모드를 새 브라우저 컨텍스트에서 녹화합니다. 학생·기관 화면은 같은 브라우저 저장소를 사용합니다.
 
 ```powershell
 cd scripts/demo-video
 npm install
 $env:PLAYWRIGHT_BROWSERS_PATH=(Get-Location).Path + '\.pw-browsers'
 npx playwright install ffmpeg
+python -m pip install --target .pydeps -r requirements.txt
 npm run record
+python finish.py
 ```
 
-결과물은 저장소 루트의 `video/부루마봉-시연.mp4`입니다. 녹화 시작 시각, 장면별 시각, 메모·브리핑 출처는 `video/시연-기록.json`에 남습니다. `video/`와 설치 파일은 Git에 포함되지 않습니다.
+`record.js`는 `video/부루마봉-시연-원본.mp4`와 자막·전환 시각이 담긴 `video/시연-기록.json`을 만듭니다. `finish.py`는 한국어 SunHi Neural 음성으로 자막을 읽고 페이지 이동 구간에 짧은 페이드를 넣어 `video/부루마봉-시연.mp4`와 별도 내레이션 `video/부루마봉-내레이션.mp3`를 만듭니다.
 
-배포 서비스의 AI 응답이 실패하면 화면의 기본 카드·규칙 브리핑으로 진행합니다. 녹화 자막은 이 경우에도 사실에 맞도록 작성했습니다.
+녹화 스크립트는 기관의 AI 카드 생성과 봉사 브리핑의 Amazon Bedrock 표시를 확인합니다. AI가 응답하지 않으면 녹화를 중단하므로, 연결 상태를 확인한 뒤 다시 실행하세요. `video/`와 설치 파일은 Git에 포함되지 않습니다.
