@@ -368,50 +368,12 @@ h2{font-family:var(--display);font-weight:400;font-size:21px;letter-spacing:-.01
       </div>
       <p class="sub" style="margin-bottom:6px">시설과 어르신이 올린 요청이에요. 앱이 어려운 어르신은 전화 한 통이면 복지관과 주민센터가 대신 올려 드려요.</p>
       <div class="reqs" id="reqList"></div>
-      <details class="memo">
-        <summary>기관 담당자: 전화 요청 올리기, 봉사 확인 코드 발급</summary>
-        <form class="form" id="memoForm" novalidate>
-          <div class="field">
-            <label for="memoFac">접수한 기관</label>
-            <select id="memoFac"></select>
-          </div>
-          <div class="field">
-            <label for="memoIn">전화 내용 메모</label>
-            <textarea id="memoIn" rows="3" maxlength="300" placeholder="예: 혼자 사시는 어르신, 병원 예약 앱 까는 걸 도와 달라고 하심. 한 시간쯤이면 된다고 함" aria-describedby="memoErr"></textarea>
-            <div class="err" id="memoErr" role="alert"></div>
-          </div>
-          <div class="brief-row">
-            <button class="btn" type="submit" id="memoBtn">요청 카드 만들기</button>
-            <span class="brief-src" id="memoSrc"></span>
-          </div>
-          <p class="fine">AI가 메모를 읽어 할 일, 시간, 디지털 동행 여부를 정리해요. 요청은 익명으로 올라가요. 어르신 성함은 적지 마세요. 성함, 전화번호, 주민번호, 상세 주소는 보내기 전에 자동으로 가리고, 학생에게 보이는 제목에는 넣지 않아요.</p>
-        </form>
-        <form class="form" id="issueForm" novalidate>
-          <h3 class="flabel" style="margin-top:18px">봉사 확인 코드 발급</h3>
-          <div class="field">
-            <label for="issueFac">우리 기관</label>
-            <select id="issueFac"></select>
-          </div>
-          <div class="field">
-            <label for="issueKey">기관 키</label>
-            <input id="issueKey" type="password" autocomplete="off" placeholder="운영자에게 받은 기관 키">
-          </div>
-          <div class="field">
-            <label for="issueReq">봉사한 요청</label>
-            <select id="issueReq"></select>
-          </div>
-          <div class="field">
-            <label for="issueHrs">실제로 확인한 봉사 시간</label>
-            <select id="issueHrs"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select>
-          </div>
-          <div class="err" id="issueErr" role="alert"></div>
-          <div class="brief-row">
-            <button class="btn" type="submit" id="issueBtn">확인 코드 받기</button>
-            <output class="issue-code" id="issueOut" aria-live="polite"></output>
-          </div>
-          <p class="fine">봉사를 마친 학생에게 이 코드를 알려 주세요. 코드는 요청, 날짜, 봉사 시간에 묶여 있어 다른 요청이나 다른 시간으로는 쓸 수 없어요.</p>
-        </form>
+      <details class="memo" id="volBox" hidden>
+        <summary id="volSum"></summary>
+        <div class="reqs" id="volList"></div>
+        <p class="fine">1365 자원봉사포털에 올라온 원주시 모집이에요. 신청과 시간 인증은 1365에서 해요. 부루마봉의 봉사 인증에는 '점수 없이 기록만'으로 남길 수 있어요.</p>
       </details>
+      <p class="fine"><a id="orgLink" href="/org.html">기관 담당자이신가요? 요청 올리기와 확인 코드 발급은 기관 화면에서 해요 →</a></p>
     </section>
 
     <section class="sec" id="brief" aria-labelledby="briefTitle">
@@ -616,7 +578,7 @@ const LIFE_KM = 8; // 캠퍼스 생활권: 집에서 8km 안 (가장 가까운 �
 function homeKmTo(lon, lat) { const h = HOME[myHome]; return h ? hav(h.lon, h.lat, lon, lat) : Infinity; }
 // 내 점수의 거리 가산: 학생은 캠퍼스와 집 중 가까운 곳, 시민 서포터는 집에서 잰다
 // 아동 시설은 한 번 오고 끝나는 봉사가 아이들에게 부담이라, 처음 온 사람에게는 시설 가산을 주지 않는다
-const CHILD_TYPES = ['보육원'];
+const CHILD_TYPES = ['보육원', '지역아동센터'];
 // 같은 시설에 4주 안에 다시 오면 꾸준함 가산
 const REPEAT_DAYS = 28, REPEAT_MUL = 1.2;
 const todayStr = () => new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
@@ -626,7 +588,7 @@ function myMult(f, date = todayStr()) {
   const useHome = isFinite(hKm) && (myRole === 'citizen' || hKm < cKm);
   const km = useHome ? hKm : cKm;
   const prev = myLogs.filter(l => l.fid === f.id && l.date < date);
-  const firstChild = CHILD_TYPES.includes(f.type) && !prev.length;
+  const firstChild = CHILD_TYPES.includes(f.type) && DATA.typeMul[f.type] > 1 && !prev.length; // 가산이 없는 곳(지역아동센터 1.0)은 바뀔 게 없다
   const type = firstChild ? 1 : DATA.typeMul[f.type];
   const repeat = prev.some(l => (Date.parse(date) - Date.parse(l.date)) / 864e5 <= REPEAT_DAYS) ? REPEAT_MUL : 1;
   return { km, from: useHome ? 'home' : 'campus', type, firstChild, repeat, dist: distMul(km), total: type * distMul(km) * repeat };
@@ -648,7 +610,7 @@ let simWeek = 0; const lastVisit = {};
 function districtActive(d) { return DATA.facilities.some(f => f.district === d && DATA.today[f.id]); }
 // 내려앉음은 시설이 도움을 청했는데(열린 요청) 아무도 가지 않은 구역에만. 요청이 없으면 봉사가 없어도 그대로
 const isPast = r => !!r.date && r.date < todayStr();
-function openSlots(r) { return isPast(r) ? 0 : r.need - r.filled - (applied.has(r.id) ? 1 : 0); }
+function openSlots(r) { return isPast(r) || r.closed || r.canceled ? 0 : r.need - r.filled - (applied.has(r.id) ? 1 : 0); }
 function districtOpen(d) { return REQS.some(r => FAC[r.fid].district === d && openSlots(r) > 0); }
 function idleWeeks(d) {
   if (!simWeek || !districtOpen(d)) return 0;
@@ -1197,22 +1159,9 @@ function renderRank() {
 }
 /* ---------- log form ---------- */
 function buildForm() {
-  // 전화 요청 등록의 접수 기관 목록
-  const groups = {};
-  for (const f of DATA.facilities) (groups[f.district] = groups[f.district] || []).push(f);
-  const mf = $('#memoFac');
-  mf.innerHTML = DIST_ORDER.filter(d => groups[d]).map(d => `<optgroup label="${esc(d)}">${groups[d].map(f => `<option value="${f.id}">${esc(f.name)} (${esc(f.type)})</option>`).join('')}</optgroup>`).join('');
-  mf.value = (DATA.facilities.find(f => f.type === '노인복지관') || DATA.facilities[0]).id;
-  $('#memoForm').addEventListener('submit', addMemoReq);
   const today = todayStr();
   $('#dateIn').value = today; $('#dateIn').max = today;
   $('#reqSel').addEventListener('change', () => { const r = REQS.find(x => x.id === $('#reqSel').value); if (r) hours = r.hours; updateCalc(); });
-  // 기관 담당자: 확인 코드 발급
-  $('#issueFac').innerHTML = mf.innerHTML; $('#issueFac').value = mf.value;
-  $('#issueFac').addEventListener('change', renderIssueReq);
-  $('#issueReq').addEventListener('change', () => { const r = REQS.find(x => x.id === $('#issueReq').value); if (r) $('#issueHrs').value = r.hours; $('#issueOut').textContent = ''; });
-  $('#issueForm').addEventListener('submit', issueCode);
-  renderIssueReq();
   $('#dateIn').addEventListener('change', updateCalc);
   $('#hrsDown').addEventListener('click', () => { hours = Math.max(1, hours - 1); updateCalc(); });
   $('#hrsUp').addEventListener('click', () => { hours = Math.min(8, hours + 1); updateCalc(); });
@@ -1224,7 +1173,7 @@ function buildForm() {
 const loggedReqs = () => new Set(myLogs.map(l => l.rid).filter(Boolean));
 function renderReqSel(pick) {
   const sel = $('#reqSel'), keep = pick || sel.value, done = loggedReqs();
-  const mine = REQS.filter(r => applied.has(r.id) && !done.has(r.id));
+  const mine = REQS.filter(r => applied.has(r.id) && !done.has(r.id) && !r.canceled);
   sel.innerHTML = (mine.length ? `<optgroup label="신청한 요청">${mine.map(r => `<option value="${r.id}">${esc(FAC[r.fid].name)}: ${esc(r.title)} (${esc(r.when)})</option>`).join('')}</optgroup>` : '')
     + `<optgroup label="점수 없이 기록만"><option value="${OUTSIDE}">신청 없이 한 봉사, 원주 밖 봉사</option></optgroup>`;
   sel.value = mine.some(r => r.id === keep) ? keep : mine.length ? mine[0].id : OUTSIDE;
@@ -1255,21 +1204,6 @@ function updateCalc() {
   if (p.m.firstChild) notes.push(`아이들 시설은 같은 곳에 두 번째 오실 때부터 ×${DATA.typeMul[p.f.type]}예요`);
   $('#calcEq').innerHTML = `기본 ${p.counted}시간 × ${esc(p.f.type)} ${p.m.type}배 × 거리 ${p.m.dist}배${p.m.repeat > 1 ? ` × 다시 온 봉사 ${p.m.repeat}배` : ''}<br><span style="color:var(--chalk-3)">${notes.join('<br>')}</span>`;
   $('#calcPts').textContent = '+' + fmt(p.points) + '점';
-}
-function renderIssueReq() {
-  const fid = $('#issueFac').value, list = REQS.filter(r => r.fid === fid);
-  $('#issueReq').innerHTML = list.length ? list.map(r => `<option value="${r.id}">${esc(r.title)} (${esc(r.when)})</option>`).join('') : '<option value="">올린 요청이 없어요</option>';
-  if (list[0]) $('#issueHrs').value = list[0].hours;
-  $('#issueOut').textContent = '';
-}
-async function issueCode(e) {
-  e.preventDefault();
-  const r = REQS.find(x => x.id === $('#issueReq').value), key = $('#issueKey').value.trim(), err = $('#issueErr');
-  err.textContent = ''; $('#issueOut').textContent = '';
-  if (!r) { err.textContent = '코드를 발급할 요청을 골라 주세요.'; return; }
-  if (!key && !DEMO) { err.textContent = '기관 키를 입력해 주세요.'; $('#issueKey').focus(); return; }
-  const j = await callVerify({ action: 'issue', fid: r.fid, rid: r.id, date: r.date, hours: +$('#issueHrs').value, key });
-  if (j.code) $('#issueOut').textContent = j.code; else err.textContent = j.error;
 }
 // 시연 모드의 확인 코드: 서버 대신 이 브라우저에서 같은 정보로 같은 코드를 만든다. 보안 기능이 아니라 무대용
 function demoVerify(b) {
@@ -1439,7 +1373,11 @@ const REQS = (() => {
   return out;
 })();
 // 전화 메모로 올린 요청(mine)은 이 브라우저에 남긴다
-REQS.unshift(...store.get('ttbb.reqs', []).filter(r => FAC[r.fid]).map(r => r.date ? r : { ...r, date: todayStr() })); // 날짜 없이 저장된 예전 요청은 오늘로
+for (const saved of store.get('ttbb.reqs', []).filter(r => FAC[r.fid])) {
+  const r = saved.date ? saved : { ...saved, date: todayStr() };
+  const i = REQS.findIndex(x => x.id === r.id);
+  if (i >= 0) REQS[i] = r; else REQS.unshift(r);
+} // 날짜 없이 저장된 예전 요청은 오늘로
 // 전화 메모의 개인정보를 브라우저에서 먼저 가린다. api/brief.js의 PII와 같은 규칙(바꾸면 둘 다)
 const PII = [
   [/\d{6}[-\s]?[1-4]\d{6}/g, '[주민번호]'],
@@ -1450,44 +1388,30 @@ const PII = [
   [/(^|[\s,.(])[김이박최정강조윤장임한오서신권황안송류유홍전고문양손배백허남심노하곽성차주우구민진나지엄채원천방공현함변염여추도소석설마길연위표명기반라왕금옥육인맹제모탁국어은편용][가-힣]{0,2}(?=\s?(?:할머니|할아버지|어르신|여사|님|씨))/g, '$1[이름]']
 ];
 const maskPII = s => PII.reduce((t, [re, to]) => t.replace(re, to), String(s));
-// AI가 못 읽을 때 쓰는 규칙: 디지털 낱말이 있으면 디지털 동행, 시간은 2시간.
-// 메모 원문은 학생에게 공개되는 제목이 되면 안 되니(익명), 정해 둔 제목만 쓴다
-function localCard(memo) {
-  const digital = /스마트폰|휴대폰|핸드폰|키오스크|앱|어플|카카오|문자|인터넷|예약/.test(memo);
-  return { title: digital ? '어르신 디지털 기기 사용 돕기' : '어르신 생활 돕기 (자세한 내용은 기관에 문의)', hours: 2, digital };
-}
-async function addMemoReq(e) {
-  e.preventDefault();
-  const raw = $('#memoIn').value.trim(), memo = maskPII(raw), btn = $('#memoBtn');
-  if (memo.length < 5) { $('#memoErr').textContent = '전화 내용을 조금 더 적어 주세요.'; $('#memoIn').focus(); return; }
-  $('#memoErr').textContent = '';
-  btn.disabled = true; btn.textContent = '메모 읽는 중…';
-  let card = null, src = '';
-  try {
-    const r = await fetch('/api/brief', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ memo }), signal: AbortSignal.timeout(9000) });
-    if (r.ok) { const j = await r.json(); if (j.request) { card = j.request; src = `AI(${({ bedrock: 'Amazon Bedrock', openrouter: 'OpenRouter' })[j.provider] || 'LLM'})가 메모를 요청 카드로 정리했어요.`; } }
-  } catch {}
-  if (!card) { card = localCard(memo); src = 'AI 서버에 연결되지 않아 규칙으로 정리했어요.'; }
-  const d = new Date(Date.now() + 9 * 3600e3 + (DEMO ? 0 : 3) * 864e5);
-  REQS.unshift({ id: 'm' + Date.now(), fid: $('#memoFac').value, title: String(card.title), hours: Math.min(8, Math.max(1, Math.round(card.hours) || 2)), digital: !!card.digital, src: 'phone', date: d.toISOString().slice(0, 10),
-    when: `${d.getUTCMonth() + 1}월 ${d.getUTCDate()}일 (${'일월화수목금토'[d.getUTCDay()]}) 14시`, need: 1, filled: 0, mine: Date.now() }); // mine: 올린 시각, 최근 것이 위로
-  store.set('ttbb.reqs', REQS.filter(r => r.mine));
-  $('#memoIn').value = ''; $('#memoSrc').textContent = src + (memo !== raw ? ' 전화번호·주소는 가리고 보냈어요.' : '');
-  btn.disabled = false; btn.textContent = '요청 카드 만들기';
-  document.querySelector('[data-req="all"]').click(); // 거르기를 풀어 새 요청이 맨 위에 보이게
-  toast(`요청을 올렸어요${card.digital ? ' (디지털 동행)' : ''}`);
-}
 function reqPts(r) { return myTeam ? round1(r.hours * myMult(FAC[r.fid]).total) : r.hours; }
 function reqRow(r) {
   const f = FAC[r.fid], on = applied.has(r.id), filled = r.filled + (on ? 1 : 0), done = loggedReqs().has(r.id), full = !on && openSlots(r) <= 0;
-  const label = done ? '인증함' : on ? '신청함' : full ? (isPast(r) ? '지난 요청' : '마감') : '신청하기';
+  const label = r.canceled ? '기관이 취소한 요청' : done ? '인증함' : on ? '신청함' : full ? (isPast(r) ? '지난 요청' : '마감') : '신청하기';
   return `<div class="req"><div><div class="req-title">${r.digital ? '<span class="tag">디지털 동행</span>' : ''}${esc(r.title)}</div>
     <div class="req-meta">${esc(f.name)}, ${r.when}, ${r.hours}시간</div>
     <div class="req-meta dim">${filled}/${r.need}명 신청. ${REQ_SRC[r.src]}</div></div>
-    <div class="req-side"><span class="req-pts">+${fmt(reqPts(r))}점</span><button type="button" class="btn small${on || full ? ' line' : ''}" data-apply="${r.id}" aria-pressed="${on}"${full || done ? ' disabled' : ''}>${label}</button></div></div>`;
+    <div class="req-side"><span class="req-pts">+${fmt(reqPts(r))}점</span><button type="button" class="btn small${on || full ? ' line' : ''}" data-apply="${r.id}" aria-pressed="${on}"${full || done || r.canceled ? ' disabled' : ''}>${label}</button></div></div>`;
+}
+// 1365 모집 정보: 서버가 공공데이터 키로 가져온다. 안 되면 칸을 숨긴 채로 둔다
+async function loadVol() {
+  try {
+    const r = await fetch('/api/vol', { signal: AbortSignal.timeout(9000) });
+    const items = r.ok ? (await r.json()).items : [];
+    if (!items || !items.length) return;
+    $('#volSum').textContent = `1365에서 모집 중인 원주 봉사 ${items.length}건`;
+    $('#volList').innerHTML = items.map(v => `<div class="req"><div><div class="req-title">${esc(v.title)}</div>
+      <div class="req-meta">${esc(v.org)}, ${esc(v.from)} ~ ${esc(v.to)}</div></div>
+      <div class="req-side"><a class="btn small line" href="${esc(v.url)}" target="_blank" rel="noopener">1365에서 보기</a></div></div>`).join('');
+    $('#volBox').hidden = false;
+  } catch {}
 }
 function renderReqs() {
-  let list = REQS.filter(r => !isPast(r) || applied.has(r.id)).filter(r => reqFilter === 'digital' ? r.digital : reqFilter === 'short' ? DATA.typeMul[FAC[r.fid].type] >= 1.5 : true);
+  let list = REQS.filter(r => (!r.canceled || applied.has(r.id)) && (!isPast(r) || applied.has(r.id))).filter(r => reqFilter === 'digital' ? r.digital : reqFilter === 'short' ? DATA.typeMul[FAC[r.fid].type] >= 1.5 : true);
   list = list.sort((a, b) => (b.mine || 0) - (a.mine || 0) || applied.has(b.id) - applied.has(a.id) || reqPts(b) - reqPts(a));
   const shown = reqMore ? list : list.slice(0, 5);
   $('#reqList').innerHTML = shown.map(reqRow).join('') + (list.length > shown.length ? `<button type="button" class="link more" id="reqMoreBtn">요청 ${list.length - shown.length}개 더 보기</button>` : '');
@@ -1495,6 +1419,7 @@ function renderReqs() {
 function toggleApply(id) {
   if (!myTeam) { openTeam(); return; }
   const r = REQS.find(x => x.id === id);
+  if (r.canceled) { toast('기관이 취소한 요청이에요'); return; }
   if (loggedReqs().has(id)) { toast('이미 인증한 요청이에요'); return; }
   if (applied.has(id)) { applied.delete(id); renderReqSel(); updateCalc(); toast('신청을 취소했어요'); }
   else {
@@ -1783,9 +1708,10 @@ $('#tReset').addEventListener('click', resetTest);
 $('#resultGo').addEventListener('click', showEffect);
 document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeTest(); if ($('#resultModal').classList.contains('open')) showEffect(); } });
 if (!myTeam) openTeam();
+loadVol();
 if (DEMO) {
   openTest();
-  $('#issueKey').placeholder = '시연 모드에서는 비워 두셔도 돼요';
+  $('#orgLink').href = '/org.html#test';
   setTimeout(() => toast('시연 모드예요. 요청은 오늘 날짜이고, 기록은 실제 기록과 따로 저장돼요'), 600);
 } else $('#resetBtn').hidden = true; // 실사용에서는 기록을 지우는 버튼을 두지 않는다
 if (Date.now() > SEASON.end.getTime() && !store.get('bmb.result' + SEASON.year, false)) {

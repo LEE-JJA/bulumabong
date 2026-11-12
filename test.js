@@ -38,9 +38,17 @@ const call = async body => {
   assert.strictEqual(m('혼자 사시는 할머니, 도움이 필요한 어르신, 선생님'), '혼자 사시는 할머니, 도움이 필요한 어르신, 선생님');
   const html = require('fs').readFileSync(__dirname + '/index.html', 'utf8');
   // 화면 스크립트에 문법 오류가 있으면 페이지 전체가 멈추니 여기서 잡는다
-  for (const [, code] of html.matchAll(/<script>([\s\S]*?)<\/script>/g)) new Function(code);
+  for (const name of ['index.html', 'org.html']) {
+    const page = require('fs').readFileSync(__dirname + '/' + name, 'utf8');
+    for (const [, code] of page.matchAll(/<script>([\s\S]*?)<\/script>/g)) new Function(code);
+  }
   const block = s => s.slice(s.indexOf('const PII = ['), s.indexOf('];', s.indexOf('const PII = [')));
-  assert.strictEqual(block(html), block(require('fs').readFileSync(__dirname + '/api/brief.js', 'utf8')), 'index.html과 api/brief.js의 PII 규칙이 다릅니다');
+  const org = require('fs').readFileSync(__dirname + '/org.html', 'utf8');
+  assert.strictEqual(block(html), block(org), '화면 사이 PII 규칙이 다릅니다');
+  assert.strictEqual(block(org), block(require('fs').readFileSync(__dirname + '/api/brief.js', 'utf8')), 'org.html과 api/brief.js의 PII 규칙이 다릅니다');
+  const titleLine = org.split('\n').find(line => line.startsWith('const cleanTitle='));
+  const cleanTitle = new Function(block(org) + ']; const maskPII = s => PII.reduce((t, [re, to]) => t.replace(re, to), String(s)); ' + titleLine + '; return cleanTitle;')();
+  assert.strictEqual(cleanTitle('김영자 할머니 010-1234-5678 병원 예약 앱 돕기'), '할머니 병원 예약 앱 돕기');
   // 확인 코드: 비밀값이 없으면 닫혀 있고, 있으면 담당자 키로 발급한 코드만 통과
   const verify = require('./api/verify');
   let ipN = 0;
@@ -53,8 +61,12 @@ const call = async body => {
   const base = { fid: 'f1', rid: 'rf1_0', date: '2026-11-12', hours: 2 };
   delete process.env.CODE_SECRET;
   assert.strictEqual((await v({ action: 'check', ...base, code: '123456' })).code, 503);
+  assert.strictEqual((await v({ action: 'auth', fid: 'f1', key: 'x' })).code, 503);
   process.env.CODE_SECRET = 'test-secret';
   const key = verify.facKey('test-secret', 'f1');
+  assert.strictEqual((await v({ action: 'auth', fid: 'f1', key })).code, 200);
+  assert.strictEqual((await v({ action: 'auth', fid: 'f1', key: 'wrong' })).code, 403);
+  assert.strictEqual((await v({ action: 'auth', fid: 'f1', key: verify.facKey('test-secret', 'f2') })).code, 403);
   assert.strictEqual((await v({ action: 'issue', ...base, key: 'wrong' })).code, 403);
   assert.strictEqual((await v({ action: 'issue', ...base, key: verify.facKey('test-secret', 'f2') })).code, 403, '다른 시설 키로는 발급 불가');
   const issued = (await v({ action: 'issue', ...base, key })).body.code;

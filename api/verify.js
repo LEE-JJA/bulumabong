@@ -48,6 +48,10 @@ function handler(req, res) {
   if (!secret) return res.status(503).json({ error: '인증 서버 설정이 아직 안 됐어요' });
   const { action, fid, rid, date, key, code } = req.body || {};
   const hours = Number((req.body || {}).hours);
+  if (action === 'auth') {
+    if (!ID.test(fid || '')) return res.status(400).json({ error: '요청 정보가 올바르지 않아요' });
+    return same(key || '', facKey(secret, fid)) ? res.status(200).json({ ok: true }) : res.status(403).json({ error: '기관 키가 맞지 않아요' });
+  }
   if (!ID.test(fid || '') || !ID.test(rid || '') || !DATE.test(date || '') || !Number.isInteger(hours) || hours < 1 || hours > 8)
     return res.status(400).json({ error: '요청 정보가 올바르지 않아요' });
   if (action === 'issue') {
@@ -63,7 +67,7 @@ function handler(req, res) {
     }
     return res.status(200).json({ ok: true, receipt: receiptFor(secret, fid, rid, date, hours) });
   }
-  return res.status(400).json({ error: 'action은 issue 또는 check예요' });
+  return res.status(400).json({ error: 'action은 auth, issue 또는 check예요' });
 }
 
 module.exports = handler;

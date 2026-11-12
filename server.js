@@ -3,7 +3,7 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const routes = { '/api/brief': require('./api/brief'), '/api/verify': require('./api/verify') };
+const routes = { '/api/brief': require('./api/brief'), '/api/verify': require('./api/verify'), '/api/vol': require('./api/vol') };
 
 const PORT = process.env.PORT || 3000;
 
@@ -21,7 +21,7 @@ http.createServer((req, res) => {
     });
     return;
   }
-  const file = path.join(__dirname, 'index.html');
+  const file = path.join(__dirname, ['/org', '/org.html'].includes(req.url.split('?')[0]) ? 'org.html' : 'index.html');
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   fs.createReadStream(file).pipe(res);
 }).listen(PORT, () => console.log(`부루마봉: http://localhost:${PORT}`));
