@@ -32,8 +32,10 @@
 | 오픈소스 런타임 | Node.js 18 이상 | 로컬 서버, 서버리스 함수 | MIT. 외부 npm 패키지는 쓰지 않음 |
 | 생성형 AI (서비스 안) | Amazon Bedrock, Claude Haiku 4.5 (AWS EC2 서버 권한으로 호출, 키를 코드에 두지 않음) | 전화 메모를 요청 카드로 구조화(전화번호·주소는 보내기 전에 가리고, 서버가 답의 형식과 범위를 다시 검사), 봉사 브리핑 문장 생성(숫자는 앱이 계산하고 모델은 문장만 씀) | AWS 서비스 약관 |
 | 생성형 AI (개발 과정) | Claude Code (Anthropic) | 코드 작성과 보안 검토, 테스트, 문서·발표자료 초안. 기능과 규칙은 팀이 정하고 결과를 확인 | - |
-| 생성형 AI (개발 과정) | Codex (OpenAI) | 기관 담당자 화면(`org.html`) 구현. 팀이 쓴 작업 지시서(`docs/codex-기관화면.md`)대로 | - |
-| 생성형 AI (개발 과정) | 캠퍼스 일러스트 | 캠퍼스 정보 카드 그림 (생성형 AI 이미지) | - |
+| 생성형 AI (개발 과정) | Codex (OpenAI) | 기관 담당자 화면(`org.html`) 구현, 시연 영상 녹화 스크립트 작성. 팀이 쓴 작업 지시서(`docs/codex-기관화면.md`, `docs/codex-시연영상.md`)대로 | - |
+| 생성형 AI (개발 과정) | 생성형 AI 이미지 | 캠퍼스 정보 카드 일러스트(AI 생성), 팀 소개 캐릭터(팀원이 스케치하고 AI로 완성) | - |
+| 음성 합성 | edge-tts (Microsoft Edge 음성 합성) | 시연 영상 내레이션 | 오픈소스 패키지, Microsoft 서비스 약관 |
+| 오픈소스 도구 | Playwright, FFmpeg(ffmpeg-static) | 시연 영상 녹화와 편집. 서비스 코드에는 들어가지 않음 | Playwright: Apache-2.0, ffmpeg-static: GPL-3.0-or-later |
 | 외부 API | Amazon Bedrock Converse API, OpenRouter(대체 경로) | `api/brief.js` | 각 서비스 약관 |
 | 공공데이터 API | 행정안전부_봉사참여정보서비스 (1365 자원봉사포털) | `api/vol.js`, 원주시 모집 중인 봉사 목록 | 공공데이터포털 이용 조건 |
 | 공공데이터 파일 | 원주시 노인의료복지시설, 장애인복지시설, 돌봄센터·지역아동센터 | `data/`, 기관 참여 요청 명단 | 공공데이터포털, 강원특별자치도 원주시 제공 |
