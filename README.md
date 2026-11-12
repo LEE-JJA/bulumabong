@@ -8,7 +8,7 @@
 
 ## 제출 정보
 
-- 서비스 URL: (배포 후 채우기)
+- 서비스 URL: https://bulumabong.vercel.app (시연 모드: https://bulumabong.vercel.app/#test, 기관 화면: https://bulumabong.vercel.app/org.html)
 - 시연 영상: (링크 채우기)
 - 발표자료: (링크 채우기)
 
