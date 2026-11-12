@@ -264,6 +264,22 @@ h2{font-family:var(--display);font-weight:400;font-size:21px;letter-spacing:-.01
 /* modal, toast, test panel */
 .modal{position:fixed;inset:0;z-index:50;background:rgba(8,18,12,.74);display:none;align-items:center;justify-content:center;padding:18px}
 .modal.open{display:flex}
+.welcome{position:fixed;inset:0;z-index:100;display:none;place-items:center;background:var(--ground);padding:20px;color:var(--chalk)}
+.welcome.open{display:grid}
+.welcome-inner{width:min(100%,680px);text-align:center}
+.welcome-char{display:block;width:clamp(88px,18svh,148px);height:clamp(88px,18svh,148px);margin:0 auto 8px}
+.welcome h1{font:400 clamp(38px,8vw,64px)/1.1 var(--display);margin:0 0 8px}
+.welcome-lead{font-size:clamp(14px,3vw,18px);line-height:1.5;margin:0 auto 20px;max-width:540px}
+.welcome-steps{list-style:none;margin:0 auto 22px;padding:0;max-width:540px;text-align:left;border-top:1px solid var(--rule)}
+.welcome-steps li{padding:10px 4px;border-bottom:1px solid var(--rule);font-size:14px}
+.welcome-steps span{display:inline-block;width:28px;color:var(--chalk-3)}
+.welcome .btn{min-width:180px}
+.welcome-links{display:flex;justify-content:center;flex-wrap:wrap;gap:4px 20px;margin-top:12px;font-size:13px}
+.welcome-links a{color:var(--chalk-2);text-underline-offset:3px}
+.welcome-tag{display:inline-block;border:1px solid var(--rule);padding:2px 9px;margin-bottom:10px;font-size:12px;color:var(--chalk-2)}
+.welcome [hidden]{display:none}
+.svg-defs{position:absolute;width:0;height:0;overflow:hidden}
+@media (max-width:420px){.welcome{padding:16px 22px}.welcome-lead{margin-bottom:14px}.welcome-steps{margin-bottom:16px}.welcome-steps li{padding:8px 2px}}
 .sheet{width:min(460px,100%);max-height:calc(100vh - 36px);overflow:auto;background:var(--rail);border:1px solid var(--rule);border-radius:8px;padding:24px}
 .sheet h2{font-size:24px;margin-bottom:6px}
 .teams{display:grid;margin:16px 0 0;border-top:1px solid var(--rule)}
@@ -310,6 +326,25 @@ h2{font-family:var(--display);font-weight:400;font-size:21px;letter-spacing:-.01
 </style>
 </head>
 <body>
+<svg class="svg-defs" aria-hidden="true"><symbol id="bongbong" viewBox="0 0 240 240"><defs><radialGradient id="bbLeaf" cx="42%" cy="30%" r="75%"><stop offset="0" stop-color="#FFEFA6"/><stop offset=".55" stop-color="#FFD75E"/><stop offset="1" stop-color="#F4B93C"/></radialGradient><linearGradient id="bbBody" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFDD6E"/><stop offset="1" stop-color="#EDB040"/></linearGradient><radialGradient id="bbBlush" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#FF8F7A" stop-opacity=".85"/><stop offset="1" stop-color="#FF8F7A" stop-opacity="0"/></radialGradient></defs><ellipse cx="120" cy="226" rx="54" ry="7" fill="#3B2408" opacity=".18"/><g stroke="#5A3A12" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M103 201v18q-10 8-20 0v-8m54-10v18q10 8 20 0v-8" fill="#E6A83B"/><path d="M94 178q-20-5-31 10-5 8 3 13 7 4 14-3l17-8" fill="#FFD75E"/><path d="M150 180q19-2 33-21l9-15 13 8-8 18q-10 23-38 31" fill="#FFD75E"/><path d="M190 149q-5-10-1-19 3-5 7-2l4 8 2-19q1-6 6-5 5 1 4 7l-1 13q4-5 8-2 4 4 0 10l-13 19z" fill="#FFDD6E"/><path d="M91 167q28-15 58 0 15 11 15 35-18 18-44 18t-44-18q0-24 15-35z" fill="url(#bbBody)"/><path d="M120 180v36" fill="none" stroke="#D99B31" stroke-width="3"/><circle cx="120" cy="196" r="2.6" fill="#D99B31" stroke="none"/><circle cx="120" cy="208" r="2.6" fill="#D99B31" stroke="none"/><path d="M120 40q-3-13 6-22" fill="none" stroke-width="5"/><path d="M126 18q12-9 20 1-9 10-20-1z" fill="#3E9A63" stroke-width="4"/><path d="M120 38q-11-17-28-9-14-13-29-2-8 6-9 15-17-5-25 11-6 13 3 23-13 11-7 27 4 12 16 16-2 18 14 29 8 6 19 6 16 17 46 17t46-17q11 0 19-6 16-11 14-29 12-4 16-16 6-16-7-27 9-10 3-23-8-16-25-11-1-9-9-15-15-11-29 2-17-8-28 9z" fill="url(#bbLeaf)"/><path d="M43 119q8 25 31 27 15 17 46 17t46-17q23-2 31-27-2 24-22 35-9 2-15 1-16 16-40 16t-40-16q-6 1-15-1-20-11-22-35z" fill="#E9AC3A" opacity=".75" stroke="none"/><path d="M120 50v20m-27-33 11 30M64 48l23 26m89-26-23 26m-6-37-11 30" fill="none" stroke="#EDB548" stroke-width="3"/><path d="M52 62q10-22 34-24" fill="none" stroke="#FFF8D6" stroke-width="6" opacity=".7"/><circle cx="44" cy="80" r="3.5" fill="#FFF8D6" stroke="none"/><ellipse cx="68" cy="126" rx="15" ry="10" fill="url(#bbBlush)" stroke="none"/><ellipse cx="172" cy="126" rx="15" ry="10" fill="url(#bbBlush)" stroke="none"/><ellipse cx="91" cy="107" rx="7" ry="9" fill="#4A2E0C" stroke="none"/><ellipse cx="149" cy="107" rx="7" ry="9" fill="#4A2E0C" stroke="none"/><circle cx="88.5" cy="103" r="2.8" fill="#FFFFFF" stroke="none"/><circle cx="146.5" cy="103" r="2.8" fill="#FFFFFF" stroke="none"/><circle cx="93.5" cy="111" r="1.3" fill="#FFFFFF" stroke="none"/><circle cx="151.5" cy="111" r="1.3" fill="#FFFFFF" stroke="none"/><path d="M108 122q12 15 24 0z" fill="#B5472F" stroke-width="4"/><path d="M113 128q7 5 14 0-7 5-14 0z" fill="#FF9C8A" stroke="none"/><path d="M91 166q29 17 58 0l-8 17q-21 10-42 0z" fill="#2B8257"/><path d="M132 181q11 2 17 10l-8 17-15-17z" fill="#24704A"/><path d="M98 172q22 9 44 0" fill="none" stroke="#5FC08C" stroke-width="2.5" opacity=".8"/><circle cx="132" cy="182" r="5.5" fill="#FFF3B0" stroke-width="3"/></g><g fill="#FFF8D6"><path d="M222 96l3 8 8 3-8 3-3 8-3-8-8-3 8-3z"/><path d="M20 150l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" opacity=".9"/><circle cx="228" cy="126" r="2.5" opacity=".8"/></g></symbol></svg>
+<div class="welcome" id="welcome" role="dialog" aria-modal="true" aria-labelledby="welcomeTitle">
+  <div class="welcome-inner">
+    <span class="welcome-tag" id="welcomeDemo" hidden>시연 모드</span>
+    <svg class="welcome-char" viewBox="0 0 240 240" aria-hidden="true"><use href="#bongbong"/></svg>
+    <h1 id="welcomeTitle">부루마봉</h1>
+    <p class="welcome-lead">원주권 대학이 봉사 시간으로 겨루는 원주 봉사 대항전</p>
+    <ol class="welcome-steps">
+      <li><span>①</span>도움 요청을 골라 신청해요</li>
+      <li><span>②</span>봉사 뒤 기관이 준 확인 코드로 인증해요</li>
+      <li><span>③</span>우리 대학 건물이 한 층씩 올라가요</li>
+    </ol>
+    <button class="btn" id="welcomeStart" type="button">시작하기</button>
+    <div class="welcome-links">
+      <a id="welcomeOrg" href="/org.html">기관 담당자 화면</a>
+      <a id="welcomeTest" href="/#test">시연 모드로 둘러보기</a>
+    </div>
+  </div>
+</div>
 <header class="top">
   <div class="logo" aria-label="부루마봉">
     <svg viewBox="0 0 26 26" aria-hidden="true"><path d="M13 23 L3.5 9.5 Q8 1.5 13 6 Q18 1.5 22.5 9.5 Z" fill="#F2C230"/><path d="M13 23 L13 8.5" stroke="#12241A" stroke-width="1.5"/></svg>
@@ -444,7 +479,7 @@ h2{font-family:var(--display);font-weight:400;font-size:21px;letter-spacing:-.01
       <div class="passwrap">
         <div class="passcard" id="passCard" aria-hidden="true">
           <div class="pc-top">원주 봉사패스</div>
-          <svg class="pc-char" viewBox="0 0 240 240"><defs><radialGradient id="bbLeaf" cx="42%" cy="30%" r="75%"><stop offset="0" stop-color="#FFEFA6"/><stop offset=".55" stop-color="#FFD75E"/><stop offset="1" stop-color="#F4B93C"/></radialGradient><linearGradient id="bbBody" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFDD6E"/><stop offset="1" stop-color="#EDB040"/></linearGradient><radialGradient id="bbBlush" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#FF8F7A" stop-opacity=".85"/><stop offset="1" stop-color="#FF8F7A" stop-opacity="0"/></radialGradient></defs><ellipse cx="120" cy="226" rx="54" ry="7" fill="#3B2408" opacity=".18"/><g stroke="#5A3A12" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M103 201v18q-10 8-20 0v-8m54-10v18q10 8 20 0v-8" fill="#E6A83B"/><path d="M94 178q-20-5-31 10-5 8 3 13 7 4 14-3l17-8" fill="#FFD75E"/><path d="M150 180q19-2 33-21l9-15 13 8-8 18q-10 23-38 31" fill="#FFD75E"/><path d="M190 149q-5-10-1-19 3-5 7-2l4 8 2-19q1-6 6-5 5 1 4 7l-1 13q4-5 8-2 4 4 0 10l-13 19z" fill="#FFDD6E"/><path d="M91 167q28-15 58 0 15 11 15 35-18 18-44 18t-44-18q0-24 15-35z" fill="url(#bbBody)"/><path d="M120 180v36" fill="none" stroke="#D99B31" stroke-width="3"/><circle cx="120" cy="196" r="2.6" fill="#D99B31" stroke="none"/><circle cx="120" cy="208" r="2.6" fill="#D99B31" stroke="none"/><path d="M120 40q-3-13 6-22" fill="none" stroke-width="5"/><path d="M126 18q12-9 20 1-9 10-20-1z" fill="#3E9A63" stroke-width="4"/><path d="M120 38q-11-17-28-9-14-13-29-2-8 6-9 15-17-5-25 11-6 13 3 23-13 11-7 27 4 12 16 16-2 18 14 29 8 6 19 6 16 17 46 17t46-17q11 0 19-6 16-11 14-29 12-4 16-16 6-16-7-27 9-10 3-23-8-16-25-11-1-9-9-15-15-11-29 2-17-8-28 9z" fill="url(#bbLeaf)"/><path d="M43 119q8 25 31 27 15 17 46 17t46-17q23-2 31-27-2 24-22 35-9 2-15 1-16 16-40 16t-40-16q-6 1-15-1-20-11-22-35z" fill="#E9AC3A" opacity=".75" stroke="none"/><path d="M120 50v20m-27-33 11 30M64 48l23 26m89-26-23 26m-6-37-11 30" fill="none" stroke="#EDB548" stroke-width="3"/><path d="M52 62q10-22 34-24" fill="none" stroke="#FFF8D6" stroke-width="6" opacity=".7"/><circle cx="44" cy="80" r="3.5" fill="#FFF8D6" opacity=".7" stroke="none"/><ellipse cx="68" cy="126" rx="15" ry="10" fill="url(#bbBlush)" stroke="none"/><ellipse cx="172" cy="126" rx="15" ry="10" fill="url(#bbBlush)" stroke="none"/><ellipse cx="91" cy="107" rx="7" ry="9" fill="#4A2E0C" stroke="none"/><ellipse cx="149" cy="107" rx="7" ry="9" fill="#4A2E0C" stroke="none"/><circle cx="88.5" cy="103" r="2.8" fill="#FFFFFF" stroke="none"/><circle cx="146.5" cy="103" r="2.8" fill="#FFFFFF" stroke="none"/><circle cx="93.5" cy="111" r="1.3" fill="#FFFFFF" stroke="none"/><circle cx="151.5" cy="111" r="1.3" fill="#FFFFFF" stroke="none"/><path d="M108 122q12 15 24 0z" fill="#B5472F" stroke-width="4"/><path d="M113 128q7 5 14 0-7 5-14 0z" fill="#FF9C8A" stroke="none"/><path d="M91 166q29 17 58 0l-8 17q-21 10-42 0z" fill="#2B8257"/><path d="M132 181q11 2 17 10l-8 17-15-17z" fill="#24704A"/><path d="M98 172q22 9 44 0" fill="none" stroke="#5FC08C" stroke-width="2.5" opacity=".8"/><circle cx="132" cy="182" r="5.5" fill="#FFF3B0" stroke-width="3"/></g><g fill="#FFF8D6"><path d="M222 96l3 8 8 3-8 3-3 8-3-8-8-3 8-3z"/><path d="M20 150l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" opacity=".9"/><circle cx="228" cy="126" r="2.5" opacity=".8"/></g></svg>
+          <svg class="pc-char" viewBox="0 0 240 240"><use href="#bongbong"/></svg>
           <div class="pc-name">봉봉이</div>
           <svg class="pc-nfc" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 7c2 3 2 7 0 10M12 5c3 4 3 10 0 14M16 3c4 5 4 13 0 18"/></svg>
           <div class="pc-ripple"></div>
@@ -1758,7 +1793,24 @@ $('#tEffect').addEventListener('click', () => { closeTest(); showEffect(); });
 $('#tReset').addEventListener('click', resetTest);
 $('#resultGo').addEventListener('click', showEffect);
 document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeTest(); if ($('#resultModal').classList.contains('open')) showEffect(); } });
-if (!myTeam) openTeam();
+function closeWelcome() {
+  $('#welcome').classList.remove('open');
+  store.set('ttbb.welcomed', true);
+  if (!myTeam) openTeam();
+}
+$('#welcomeStart').addEventListener('click', closeWelcome);
+$('#welcome').addEventListener('keydown', e => {
+  if (e.key === 'Escape') { e.stopPropagation(); closeWelcome(); }
+  if (e.key !== 'Tab') return;
+  const links = [$('#welcomeStart'), $('#welcomeOrg'), $('#welcomeTest')].filter(el => !el.hidden);
+  const first = links[0], last = links[links.length - 1];
+  if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+});
+$('#welcomeTest').addEventListener('click', e => { e.preventDefault(); location.assign('/#test'); location.reload(); });
+if (DEMO) { $('#welcomeDemo').hidden = false; $('#welcomeTest').hidden = true; $('#welcomeOrg').href = '/org.html#test'; }
+if (!store.get('ttbb.welcomed', false)) { $('#welcome').classList.add('open'); $('#welcomeStart').focus(); }
+else if (!myTeam) openTeam();
 loadVol();
 if (DEMO) {
   openTest();
