@@ -96,6 +96,11 @@ const call = async body => {
   assert.deepStrictEqual(got.map(v => v.title), ['곧 끝남 <b>', '늦게 끝남']);
   assert.deepStrictEqual(got[0], { no: '4', title: '곧 끝남 <b>', org: '원주&센터', from: '2026-11-01', to: '2026-11-15', url: 'https://1365.go.kr/vols/P9210/partcptn/timeCptn.do?type=show&progrmRegistNo=4' });
   assert.throws(() => vol.parse('<response><header><resultCode>30</resultCode></header></response>', '2026-11-12'));
+  // 상세: 좌표·시간·인원만 고르고 담당자 이름·전화는 버린다. 원주 밖 좌표는 지도에 찍지 않는다
+  const det = x => `<response><header><resultCode>00</resultCode></header><body><items><item>${x}<nanmmbyNmAdmn>홍길동</nanmmbyNmAdmn><telno>033-000-0000</telno></item></items></body></response>`;
+  assert.deepStrictEqual(vol.parseDetail(det('<actBeginTm>9</actBeginTm><actEndTm>12</actEndTm><actPlace>원주한지테마파크</actPlace><adultPosblAt>Y</adultPosblAt><appTotal>0</appTotal><areaLalo1>37.3343755264909,127.935395728281</areaLalo1><rcritNmpr>2</rcritNmpr>')),
+    { lat: 37.33438, lon: 127.9354, place: '원주한지테마파크', time: '9시~12시', need: 2, adult: true });
+  assert.deepStrictEqual(vol.parseDetail(det('<areaLalo1>37.56,126.97</areaLalo1>')), { place: '', time: '', need: null, adult: false });
   delete process.env.DATA_GO_KR_KEY;
   const vo = {}; const vres = { status: c => { vo.code = c; return vres; }, json: o => { vo.body = o; } };
   await vol({ method: 'GET', headers: {}, socket: { remoteAddress: 'vol' } }, vres);
