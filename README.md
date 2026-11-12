@@ -33,7 +33,7 @@
 | 생성형 AI (서비스 안) | Amazon Bedrock, Claude Haiku 4.5 (AWS EC2 서버 권한으로 호출, 키를 코드에 두지 않음) | 전화 메모를 요청 카드로 구조화(전화번호·주소는 보내기 전에 가리고, 서버가 답의 형식과 범위를 다시 검사), 봉사 브리핑 문장 생성(숫자는 앱이 계산하고 모델은 문장만 씀) | AWS 서비스 약관 |
 | 생성형 AI (개발 과정) | Claude Code (Anthropic) | 코드 작성과 보안 검토, 테스트, 문서·발표자료 초안. 기능과 규칙은 팀이 정하고 결과를 확인 | - |
 | 생성형 AI (개발 과정) | Codex (OpenAI) | 기관 담당자 화면(`org.html`) 구현, 시연 영상 녹화 스크립트 작성. 팀이 쓴 작업 지시서(`docs/codex-기관화면.md`, `docs/codex-시연영상.md`)대로 | - |
-| 생성형 AI (개발 과정) | 생성형 AI 이미지 | 캠퍼스 정보 카드 일러스트(AI 생성), 팀 소개 캐릭터(팀원이 스케치하고 AI로 완성) | - |
+| 생성형 AI (개발 과정) | 생성형 AI 이미지 | 캠퍼스 정보 카드 일러스트(AI 생성), 팀 소개 캐릭터(팀원이 스케치하고 AI로 완성), 봉사패스 캐릭터 봉봉이(`docs/봉봉이.svg`, Codex가 그리고 Claude Code가 다듬음) | - |
 | 음성 합성 | edge-tts (Microsoft Edge 음성 합성) | 시연 영상 내레이션 | 오픈소스 패키지, Microsoft 서비스 약관 |
 | 오픈소스 도구 | Playwright, FFmpeg(ffmpeg-static) | 시연 영상 녹화와 편집. 서비스 코드에는 들어가지 않음 | Playwright: Apache-2.0, ffmpeg-static: GPL-3.0-or-later |
 | 외부 API | Amazon Bedrock Converse API, OpenRouter(대체 경로) | `api/brief.js` | 각 서비스 약관 |

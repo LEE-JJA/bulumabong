@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-labelledby="bbTitle">
+  <title id="bbTitle">봉봉이</title>
+  <defs>
+    <radialGradient id="bbLeaf" cx="42%" cy="30%" r="75%">
+      <stop offset="0" stop-color="#FFEFA6"/>
+      <stop offset=".55" stop-color="#FFD75E"/>
+      <stop offset="1" stop-color="#F4B93C"/>
+    </radialGradient>
+    <linearGradient id="bbBody" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFDD6E"/>
+      <stop offset="1" stop-color="#EDB040"/>
+    </linearGradient>
+    <radialGradient id="bbBlush" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#FF8F7A" stop-opacity=".85"/>
+      <stop offset="1" stop-color="#FF8F7A" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <ellipse cx="120" cy="226" rx="54" ry="7" fill="#3B2408" opacity=".18"/>
+  <g stroke="#5A3A12" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M103 201v18q-10 8-20 0v-8m54-10v18q10 8 20 0v-8" fill="#E6A83B"/>
+    <path d="M94 178q-20-5-31 10-5 8 3 13 7 4 14-3l17-8" fill="#FFD75E"/>
+    <path d="M150 180q19-2 33-21l9-15 13 8-8 18q-10 23-38 31" fill="#FFD75E"/>
+    <path d="M190 149q-5-10-1-19 3-5 7-2l4 8 2-19q1-6 6-5 5 1 4 7l-1 13q4-5 8-2 4 4 0 10l-13 19z" fill="#FFDD6E"/>
+    <path d="M91 167q28-15 58 0 15 11 15 35-18 18-44 18t-44-18q0-24 15-35z" fill="url(#bbBody)"/>
+    <path d="M120 180v36" fill="none" stroke="#D99B31" stroke-width="3"/>
+    <circle cx="120" cy="196" r="2.6" fill="#D99B31" stroke="none"/>
+    <circle cx="120" cy="208" r="2.6" fill="#D99B31" stroke="none"/>
+    <path d="M120 40q-3-13 6-22" fill="none" stroke-width="5"/>
+    <path d="M126 18q12-9 20 1-9 10-20-1z" fill="#3E9A63" stroke-width="4"/>
+    <path d="M120 38q-11-17-28-9-14-13-29-2-8 6-9 15-17-5-25 11-6 13 3 23-13 11-7 27 4 12 16 16-2 18 14 29 8 6 19 6 16 17 46 17t46-17q11 0 19-6 16-11 14-29 12-4 16-16 6-16-7-27 9-10 3-23-8-16-25-11-1-9-9-15-15-11-29 2-17-8-28 9z" fill="url(#bbLeaf)"/>
+    <path d="M43 119q8 25 31 27 15 17 46 17t46-17q23-2 31-27-2 24-22 35-9 2-15 1-16 16-40 16t-40-16q-6 1-15-1-20-11-22-35z" fill="#E9AC3A" opacity=".75" stroke="none"/>
+    <path d="M120 50v20m-27-33 11 30M64 48l23 26m89-26-23 26m-6-37-11 30" fill="none" stroke="#EDB548" stroke-width="3"/>
+    <path d="M52 62q10-22 34-24" fill="none" stroke="#FFF8D6" stroke-width="6" opacity=".7"/>
+    <circle cx="44" cy="80" r="3.5" fill="#FFF8D6" opacity=".7" stroke="none"/>
+    <ellipse cx="68" cy="126" rx="15" ry="10" fill="url(#bbBlush)" stroke="none"/>
+    <ellipse cx="172" cy="126" rx="15" ry="10" fill="url(#bbBlush)" stroke="none"/>
+    <ellipse cx="91" cy="107" rx="7" ry="9" fill="#4A2E0C" stroke="none"/>
+    <ellipse cx="149" cy="107" rx="7" ry="9" fill="#4A2E0C" stroke="none"/>
+    <circle cx="88.5" cy="103" r="2.8" fill="#FFFFFF" stroke="none"/>
+    <circle cx="146.5" cy="103" r="2.8" fill="#FFFFFF" stroke="none"/>
+    <circle cx="93.5" cy="111" r="1.3" fill="#FFFFFF" stroke="none"/>
+    <circle cx="151.5" cy="111" r="1.3" fill="#FFFFFF" stroke="none"/>
+    <path d="M108 122q12 15 24 0z" fill="#B5472F" stroke-width="4"/>
+    <path d="M113 128q7 5 14 0-7 5-14 0z" fill="#FF9C8A" stroke="none"/>
+    <path d="M91 166q29 17 58 0l-8 17q-21 10-42 0z" fill="#2B8257"/>
+    <path d="M132 181q11 2 17 10l-8 17-15-17z" fill="#24704A"/>
+    <path d="M98 172q22 9 44 0" fill="none" stroke="#5FC08C" stroke-width="2.5" opacity=".8"/>
+    <circle cx="132" cy="182" r="5.5" fill="#FFF3B0" stroke-width="3"/>
+  </g>
+  <g fill="#FFF8D6">
+    <path d="M222 96l3 8 8 3-8 3-3 8-3-8-8-3 8-3z"/>
+    <path d="M20 150l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" opacity=".9"/>
+    <circle cx="228" cy="126" r="2.5" opacity=".8"/>
+  </g>
+</svg>
