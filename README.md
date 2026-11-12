@@ -8,7 +8,8 @@
 
 ## 제출 정보
 
-- 서비스 URL: https://bulumabong.vercel.app (시연 모드: https://bulumabong.vercel.app/#test, 기관 화면: https://bulumabong.vercel.app/org.html)
+- 서비스 URL: http://3.106.70.230 (시연 모드: http://3.106.70.230/#test, 기관 화면: http://3.106.70.230/org.html). 대회가 준 AWS 서버(EC2)에서 돌고, AI는 서버 권한으로 Amazon Bedrock을 부릅니다
+- 보조 주소(AI 없이 규칙 문장): https://bulumabong.vercel.app
 - 시연 영상: (링크 채우기)
 - 발표자료: (링크 채우기)
 
@@ -18,7 +19,7 @@
 |---|---|
 | 문제 정의 | 대입에서 봉사 실적이 빠진 뒤 20대가 봉사를 이어갈 계기가 없고, 손이 필요한 읍·면 시설과 어르신은 멀리 있으며, 앱으로 도움을 요청하는 것 자체가 어르신에게 장벽이다 |
 | 핵심 기능 | 도움 요청 매칭(기관 화면에서 복지관·주민센터가 전화 메모를 넣으면 AI가 할 일·시간·디지털 동행 여부를 익명 요청 카드로 정리, 1365 원주 모집 정보 함께 보기), 대학 대항 봉사 지도(손이 부족한 곳일수록 높은 점수), AI 봉사 브리핑, 기관이 발급한 확인 코드로 봉사 인증과 순위, 캠퍼스·동네 가게 혜택 |
-| 활용 기술 | HTML·CSS·JavaScript 단일 페이지(SVG 지도), Node.js 서버와 서버리스 함수(Vercel), Amazon Bedrock(Nova Lite), 공공데이터포털 1365 봉사참여정보 API, HMAC 확인 코드 |
+| 활용 기술 | HTML·CSS·JavaScript 단일 페이지(SVG 지도), Node.js 서버(AWS EC2, systemd), Amazon Bedrock(Claude Haiku 4.5, 서버 IAM 역할로 SigV4 서명 호출), 공공데이터포털 1365 봉사참여정보 API, HMAC 확인 코드 |
 | 기대효과 | 20대 첫 봉사 후 4주 안 재참여율, 면 지역·가산 시설로 간 봉사 시간 비중, 디지털 동행 건수, 시민 서포터 수를 늘린다 |
 
 ### 기술 활용 내역
@@ -29,7 +30,7 @@
 | 오픈 데이터 | OpenStreetMap | 캠퍼스 위치 좌표 | ODbL 1.0, © OpenStreetMap 기여자 |
 | 오픈소스 글꼴 | Black Han Sans, IBM Plex Sans KR (Google Fonts) | 제목, 본문 | SIL Open Font License 1.1 |
 | 오픈소스 런타임 | Node.js 18 이상 | 로컬 서버, 서버리스 함수 | MIT. 외부 npm 패키지는 쓰지 않음 |
-| 생성형 AI (서비스 안) | Amazon Bedrock, Amazon Nova Lite | 전화 메모를 요청 카드로 구조화(전화번호·주소는 보내기 전에 가리고, 서버가 답의 형식과 범위를 다시 검사), 봉사 브리핑 문장 생성(숫자는 앱이 계산하고 모델은 문장만 씀) | AWS 서비스 약관 |
+| 생성형 AI (서비스 안) | Amazon Bedrock, Claude Haiku 4.5 (AWS EC2 서버 권한으로 호출, 키를 코드에 두지 않음) | 전화 메모를 요청 카드로 구조화(전화번호·주소는 보내기 전에 가리고, 서버가 답의 형식과 범위를 다시 검사), 봉사 브리핑 문장 생성(숫자는 앱이 계산하고 모델은 문장만 씀) | AWS 서비스 약관 |
 | 생성형 AI (개발 과정) | Claude Code (Anthropic) | 코드 작성과 보안 검토, 테스트, 문서·발표자료 초안. 기능과 규칙은 팀이 정하고 결과를 확인 | - |
 | 생성형 AI (개발 과정) | Codex (OpenAI) | 기관 담당자 화면(`org.html`) 구현. 팀이 쓴 작업 지시서(`docs/codex-기관화면.md`)대로 | - |
 | 생성형 AI (개발 과정) | 캠퍼스 일러스트 | 캠퍼스 정보 카드 그림 (생성형 AI 이미지) | - |
@@ -94,7 +95,16 @@ node server.js
 
 키가 없거나 연결이 실패하면 규칙으로 만든 문장으로 자동 전환되고, 문장 아래에 그렇다고 표시됩니다. 시연이 끊기지 않습니다.
 
-## 배포 (Vercel)
+## 배포 (AWS EC2, 제출 주소)
+
+대회가 준 서버(Ubuntu 24.04, 시드니 ap-southeast-2)에서 돌립니다. 서버에 Bedrock 권한이 붙어 있어 키가 필요 없습니다.
+
+1. 서버에서 `sudo apt-get install -y nodejs` 후 `git clone https://github.com/LEE-JJA/bulumabong`
+2. `~/bulumabong.env`(권한 600)에 `PORT=80`, `AI_PROVIDER=bedrock`, `AWS_REGION=ap-southeast-2`, `BEDROCK_MODEL_ID=global.anthropic.claude-haiku-4-5-20251001-v1:0`, `CODE_SECRET`, `DATA_GO_KR_KEY`를 적습니다.
+3. systemd 서비스 `bulumabong`(`ExecStart=/usr/bin/node server.js`, `EnvironmentFile=/home/ubuntu/bulumabong.env`, `AmbientCapabilities=CAP_NET_BIND_SERVICE`, `Restart=always`)로 띄웁니다. 코드를 바꾸면 `git pull && sudo systemctl restart bulumabong`.
+4. 행사가 끝나면 서버가 삭제됩니다. 계속 쓰려면 다른 서버로 옮겨야 합니다.
+
+## 배포 (Vercel, 보조)
 
 - Vercel에서 가져오거나 이 폴더에서 `npx vercel --prod`로 올리면 `index.html`, `org.html`은 정적 페이지로, `api/`의 파일(`_`로 시작하는 것 제외)은 서버리스 함수로 자동 인식됩니다.
 - Vercel 프로젝트 설정의 Environment Variables에 `AWS_BEARER_TOKEN_BEDROCK`, `CODE_SECRET`, `DATA_GO_KR_KEY`를 넣고 다시 배포합니다.

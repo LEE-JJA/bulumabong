@@ -3,6 +3,7 @@
 //
 // 환경변수
 //   AWS_BEARER_TOKEN_BEDROCK  Bedrock API 키. 이 값이 있으면 Bedrock을 먼저 써요.
+//                          AWS 서버(EC2)에서는 키 없이 AI_PROVIDER=bedrock만 주면 서버 권한(IAM 역할)으로 불러요.
 //   BEDROCK_MODEL_ID       기본값 us.amazon.nova-lite-v1:0 (Amazon Nova Lite, 미국 리전 추론 프로필)
 //   AWS_REGION             기본값 us-east-1
 //   OPENROUTER_API_KEY     Bedrock 키가 없을 때 쓰는 OpenRouter 키
@@ -11,9 +12,9 @@
 
 const SYSTEM = [
   "너는 원주권 대학 봉사 대항전 앱 '부루마봉'의 봉사 길잡이야.",
-  '겨루는 것은 대학끼리의 봉사 시간이야. 시설, 어르신, 아이를 빼앗거나 차지하는 대상처럼 말하지 말고, 점령, 뺏다, 허물다, 무너뜨리다, 공격, 작전 같은 말은 쓰지 마.',
+  '겨루는 것은 대학끼리의 봉사 시간이야. 시설, 어르신, 아이를 빼앗거나 차지하는 대상처럼 말하지 말고, 점령, 뺏다, 차지하다, 확보하다, 허물다, 무너뜨리다, 공격, 방어, 공략, 작전, 전략, 인력 배치 같은 말은 쓰지 마.',
   '주어진 판세 데이터로 우리 대학 학생에게 브리핑을 3문단 이내, 문단마다 1~2문장으로 써.',
-  '규칙: 데이터에 있는 숫자와 이름만 쓰고 새 숫자를 지어내지 마. 과장과 명령조는 피하고 20대에게 말하듯 친근한 존댓말로 써. 이모지와 마크다운은 쓰지 마.',
+  '규칙: 데이터에 있는 숫자와 이름만 쓰고 새 숫자를 지어내지 마. 과장과 명령조는 피하고 20대에게 말하듯 친근한 존댓말로 쓰고, 모든 문장을 "~요"로 끝내(반말 금지). 이모지와 마크다운은 쓰지 마.',
   '이 앱은 부루마블처럼 구역마다 1위 대학의 건물이 서. 2위와의 점수 차가 클수록 층이 올라가고(최대 5층), 따라잡히면 한 층씩 내려앉아. 구역, 건물, 층이라는 말을 자연스럽게 써.',
   '1문단: 우리 대학 순위, 1위 구역 수, 세운 건물 층수 합계(floorsTotal). 2문단: 가장 빨리 1위가 될 수 있는 구역과 그곳의 시설, 필요한 시간, 붙는 가산점. 3문단: 가장 위태로운 우리 건물(defend: floors층, pointsToLoseFloor점이면 내려앉음 또는 1층이면 1위가 바뀜)과 지키는 방법(있을 때만).'
 ].join('\n');
@@ -112,20 +113,45 @@ async function callOpenRouter(system, user) {
   return j.choices[0].message.content;
 }
 
+// AWS 서버(EC2)에서는 키 없이 서버에 붙은 권한(IAM 역할)으로 부른다: 메타데이터에서 임시 자격 증명을 받아 SigV4로 서명
+const crypto = require('crypto');
+let roleCache = null;
+async function roleCreds() {
+  if (roleCache && Date.parse(roleCache.Expiration) - Date.now() > 5 * 60e3) return roleCache;
+  const IMDS = 'http://169.254.169.254/latest/', opt = { signal: AbortSignal.timeout(2000) };
+  const token = await (await fetch(IMDS + 'api/token', { ...opt, method: 'PUT', headers: { 'X-aws-ec2-metadata-token-ttl-seconds': '300' } })).text();
+  const headers = { 'X-aws-ec2-metadata-token': token };
+  const role = (await (await fetch(IMDS + 'meta-data/iam/security-credentials/', { ...opt, headers })).text()).split('\n')[0];
+  roleCache = await (await fetch(IMDS + 'meta-data/iam/security-credentials/' + role, { ...opt, headers })).json();
+  return roleCache;
+}
+const sha = s => crypto.createHash('sha256').update(s).digest('hex');
+const hmac = (k, s) => crypto.createHmac('sha256', k).update(s).digest();
+function sigV4({ host, path, body, region, c, now = new Date() }) {
+  const amz = now.toISOString().replace(/[:-]|\.\d{3}/g, ''), date = amz.slice(0, 8), scope = `${date}/${region}/bedrock/aws4_request`;
+  const h = { 'content-type': 'application/json', host, 'x-amz-date': amz, ...(c.Token ? { 'x-amz-security-token': c.Token } : {}) };
+  const names = Object.keys(h).sort();
+  // S3가 아닌 서비스는 경로 조각을 한 번 더 인코딩해서 서명한다(모델 ID의 ':' → %3A → %253A)
+  const canon = ['POST', path.split('/').map(encodeURIComponent).join('/'), '', ...names.map(n => `${n}:${h[n]}`), '', names.join(';'), sha(body)].join('\n');
+  let k = hmac('AWS4' + c.SecretAccessKey, date);
+  for (const p of [region, 'bedrock', 'aws4_request']) k = hmac(k, p);
+  const sig = crypto.createHmac('sha256', k).update(['AWS4-HMAC-SHA256', amz, scope, sha(canon)].join('\n')).digest('hex');
+  delete h.host;
+  return { ...h, authorization: `AWS4-HMAC-SHA256 Credential=${c.AccessKeyId}/${scope}, SignedHeaders=${names.join(';')}, Signature=${sig}` };
+}
+
 async function callBedrock(system, user) {
   const token = process.env.AWS_BEARER_TOKEN_BEDROCK;
   const model = process.env.BEDROCK_MODEL_ID || 'us.amazon.nova-lite-v1:0';
-  if (!token) throw new Error('AWS_BEARER_TOKEN_BEDROCK 환경변수가 없어요');
   const region = process.env.AWS_REGION || 'us-east-1';
-  const r = await fetch(`https://bedrock-runtime.${region}.amazonaws.com/model/${encodeURIComponent(model)}/converse`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      system: [{ text: system }],
-      messages: [{ role: 'user', content: [{ text: user }] }],
-      inferenceConfig: { maxTokens: 400, temperature: 0.6 }
-    })
+  const host = `bedrock-runtime.${region}.amazonaws.com`, path = `/model/${encodeURIComponent(model)}/converse`;
+  const body = JSON.stringify({
+    system: [{ text: system }],
+    messages: [{ role: 'user', content: [{ text: user }] }],
+    inferenceConfig: { maxTokens: 800, temperature: 0.6 }
   });
+  const headers = token ? { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } : sigV4({ host, path, body, region, c: await roleCreds() });
+  const r = await fetch(`https://${host}${path}`, { method: 'POST', headers, body, signal: AbortSignal.timeout(20000) });
   if (!r.ok) throw new Error(`Bedrock ${r.status}: ${await r.text()}`);
   const j = await r.json();
   return j.output.message.content.map(c => c.text || '').join('');
@@ -135,3 +161,4 @@ module.exports = handler;
 module.exports.clean = clean;
 module.exports.parseCard = parseCard;
 module.exports.maskPII = maskPII;
+module.exports.sigV4 = sigV4;
