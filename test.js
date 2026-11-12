@@ -42,7 +42,8 @@ const call = async body => {
     const page = require('fs').readFileSync(__dirname + '/' + name, 'utf8');
     for (const [, code] of page.matchAll(/<script>([\s\S]*?)<\/script>/g)) new Function(code);
   }
-  const block = s => s.slice(s.indexOf('const PII = ['), s.indexOf('];', s.indexOf('const PII = [')));
+  // Windows에서 받으면 파일마다 줄바꿈(CRLF/LF)이 다를 수 있어 맞춰서 비교한다
+  const block = s => { s = s.replace(/\r\n/g, '\n'); const i = s.indexOf('const PII = ['); return s.slice(i, s.indexOf('];', i)); };
   const org = require('fs').readFileSync(__dirname + '/org.html', 'utf8');
   assert.strictEqual(block(html), block(org), '화면 사이 PII 규칙이 다릅니다');
   assert.strictEqual(block(org), block(require('fs').readFileSync(__dirname + '/api/brief.js', 'utf8')), 'org.html과 api/brief.js의 PII 규칙이 다릅니다');
