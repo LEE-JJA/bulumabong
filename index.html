@@ -1419,7 +1419,7 @@ async function loadVol() {
   try {
     const r = await fetch('/api/vol', { signal: AbortSignal.timeout(15000) });
     const j = r.ok ? await r.json() : {}, items = j.items;
-    if (j.pending && ++volTries < 15) setTimeout(loadVol, 4000); // 서버가 위치 정보를 다 못 받았으면 조금 뒤 나머지를 받는다
+    if (j.pending && ++volTries < 8) setTimeout(loadVol, 15000); // 서버가 위치 정보를 다 못 받았으면 조금 뒤 나머지를 받는다
     if (!items || !items.length) return;
     $('#volSum').textContent = `1365에서 모집 중인 원주 봉사 ${items.length}건`;
     $('#volList').innerHTML = items.map(v => `<div class="req"><div><div class="req-title">${esc(v.title)}</div>

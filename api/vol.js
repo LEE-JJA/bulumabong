@@ -5,6 +5,8 @@
 //   - 위치·시간·인원이 있는 상세는 봉사마다 한 번만 불러 기억한다(처음 약 70번, 그 뒤에는 새 글만)
 //   - 상세는 초당 요청 제한이 있어(약 2번) 0.45초 간격으로, 한 번에 4초까지만 부르고 나머지는 다음 요청에서 이어 부른다
 //   - 서버가 새로 켜져도 다시 부르지 않게 data/1365-상세.json에 미리 받아 둔다: node api/vol.js seed
+//   - 못 받은 상세가 있어도 20초에 한 번만 다시 부르고(동시 요청은 한 번으로 묶음), 세 번 실패한 봉사는 위치 없이 둔다
+//   - 서버 한 대가 하루 900번 넘게 부르지 않는다(공공데이터포털 한도 1,000번)
 const limited = require('./_limit')(30);
 const BASE = 'https://apis.data.go.kr/1741000/volunteerPartcptnService/';
 const WONJU = { schSido: '6420000', schSign1: '4190000' }; // 강원특별자치도 원주시 (1365 지역코드)
@@ -14,13 +16,20 @@ let seed = {};
 try { seed = require('../data/1365-상세.json'); } catch {}
 const details = new Map(Object.entries(seed)); // 봉사 번호 → 상세. 실패한 것은 넣지 않아 다음에 다시 부른다
 const wait = ms => new Promise(r => setTimeout(r, ms));
-const GAP = 450, BUDGET = 4000;
+const GAP = 450, BUDGET = 4000, RETRY = 20e3, DAY_CAP = 900;
+const failed = new Map(); // 봉사 번호 → 상세 실패 횟수
+let used = { day: '', n: 0 }, refreshing = null;
 async function fillDetails(get, list, budget) {
   const t0 = Date.now();
   for (const v of list.filter(x => !details.has(x.no))) {
     if (Date.now() - t0 > budget) break;
     try { details.set(v.no, parseDetail(await get('getVltrPartcptnItem', { progrmRegistNo: v.no }))); }
-    catch (e) { console.error('[vol] 상세', v.no, e.message.slice(0, 80)); break; } // 막히면 멈추고 다음 요청에서 다시
+    catch (e) {
+      console.error('[vol] 상세', v.no, e.message.slice(0, 80));
+      const n = (failed.get(v.no) || 0) + 1; failed.set(v.no, n);
+      if (n >= 3) details.set(v.no, {}); // 계속 실패하는 한 건 때문에 끝없이 다시 부르지 않게
+      break; // 막히면 멈추고 다음 차례에 다시
+    }
     await wait(GAP);
   }
   return list.filter(x => !details.has(x.no)).length;
@@ -55,27 +64,36 @@ function parseDetail(xml) {
   };
 }
 
-const getter = key => (op, params) => fetch(`${BASE}${op}?${new URLSearchParams({ serviceKey: key, ...params })}`, { signal: AbortSignal.timeout(8000) }).then(r => r.text());
+const getter = key => (op, params) => {
+  const day = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
+  if (used.day !== day) used = { day, n: 0 };
+  if (++used.n > DAY_CAP) return Promise.reject(new Error('오늘 1365 호출 한도에 닿음'));
+  return fetch(`${BASE}${op}?${new URLSearchParams({ serviceKey: key, ...params })}`, { signal: AbortSignal.timeout(8000) }).then(r => r.text());
+};
+async function refresh(key) {
+  const get = getter(key);
+  try {
+    // shortcut: 한 번에 100건까지만 가져온다(2026-11 원주 70건), 넘으면 pageNo로 이어 받을 것
+    const today = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
+    const list = parse(await get('getVltrAreaList', { ...WONJU, numOfRows: '100', pageNo: '1' }), today);
+    const pending = await fillDetails(get, list, BUDGET);
+    cache = { at: Date.now(), pending, items: list.map(v => ({ ...v, ...details.get(v.no) })) };
+  } catch (e) {
+    console.error('[vol]', e.message);
+    cache.at = Date.now(); // 실패하면 지난 결과를 그대로 쓰고 다음 차례까지 다시 부르지 않는다
+  }
+}
 
 async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'GET 요청만 받아요' });
   if (limited(req)) return res.status(429).json({ error: '요청이 많아요. 잠시 뒤에 다시 해 주세요' });
   const key = process.env.DATA_GO_KR_KEY;
   if (!key) return res.status(503).json({ error: '1365 연동 설정이 아직 안 됐어요' });
-  if (!cache.items || cache.pending || Date.now() - cache.at > TTL) {
-    const get = getter(key);
-    try {
-      // shortcut: 한 번에 100건까지만 가져온다(2026-11 원주 70건), 넘으면 pageNo로 이어 받을 것
-      const today = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
-      const list = parse(await get('getVltrAreaList', { ...WONJU, numOfRows: '100', pageNo: '1' }), today);
-      const pending = await fillDetails(get, list, BUDGET);
-      cache = { at: Date.now(), pending, items: list.map(v => ({ ...v, ...details.get(v.no) })) };
-    } catch (e) {
-      console.error('[vol]', e.message);
-      if (!cache.items) return res.status(502).json({ error: '1365 정보를 가져오지 못했어요' });
-      cache.at = Date.now(); // 실패하면 지난 결과를 10분 더 쓴다(매 요청마다 다시 부르지 않게)
-    }
+  if (Date.now() - cache.at > (cache.pending || !cache.items ? RETRY : TTL)) {
+    refreshing = refreshing || refresh(key).finally(() => { refreshing = null; });
+    await refreshing;
   }
+  if (!cache.items) return res.status(502).json({ error: '1365 정보를 가져오지 못했어요' });
   // 상세를 아직 다 못 받았으면 CDN에 담지 않는다(화면이 몇 초 뒤 다시 물어 나머지를 받음)
   res.setHeader('Cache-Control', cache.pending ? 'no-store' : 'public, max-age=0, s-maxage=21600, stale-while-revalidate=86400');
   return res.status(200).json({ items: cache.items, pending: cache.pending || 0, at: new Date(cache.at).toISOString() });

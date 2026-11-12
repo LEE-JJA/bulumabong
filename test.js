@@ -105,5 +105,16 @@ const call = async body => {
   const vo = {}; const vres = { status: c => { vo.code = c; return vres; }, json: o => { vo.body = o; } };
   await vol({ method: 'GET', headers: {}, socket: { remoteAddress: 'vol' } }, vres);
   assert.strictEqual(vo.code, 503, '키가 없으면 닫힘');
+  // 상세가 계속 막혀도 동시 요청은 한 번으로 묶고, 20초 안에는 다시 부르지 않는다(하루 한도 보호)
+  process.env.DATA_GO_KR_KEY = 'k';
+  const realFetch = global.fetch, calls = [];
+  global.fetch = async u => { calls.push(String(u).includes('PartcptnItem') ? 'detail' : 'list'); return { text: async () => String(u).includes('PartcptnItem') ? '<returnReasonCode>23</returnReasonCode>' : xml.replace(/20261130|20261115/g, '20991230') }; };
+  const hit = async () => { const o = {}; const r = { setHeader() {}, status: c => { o.code = c; return r; }, json: b => { o.body = b; } }; await vol({ method: 'GET', headers: {}, socket: { remoteAddress: 'v' + Math.random() } }, r); return o; };
+  const outs = await Promise.all([hit(), hit(), hit(), hit(), hit()]);
+  assert.ok(outs.every(o => o.code === 200 && o.body.pending === 2));
+  assert.deepStrictEqual(calls, ['list', 'detail'], '동시 요청 5개에 1365 호출은 목록 1번, 상세 1번');
+  await hit();
+  assert.strictEqual(calls.length, 2, '20초 안에는 다시 부르지 않음');
+  global.fetch = realFetch; delete process.env.DATA_GO_KR_KEY;
   console.log('ok');
 })();
