@@ -1809,7 +1809,8 @@ $('#welcome').addEventListener('keydown', e => {
 });
 $('#welcomeTest').addEventListener('click', e => { e.preventDefault(); location.assign('/#test'); location.reload(); });
 if (DEMO) { $('#welcomeDemo').hidden = false; $('#welcomeTest').hidden = true; $('#welcomeOrg').href = '/org.html#test'; }
-if (!store.get('ttbb.welcomed', false)) { $('#welcome').classList.add('open'); $('#welcomeStart').focus(); }
+// 시연 모드는 무대에서 처음부터 보여 주도록 열 때마다 웰컴 화면
+if (DEMO || !store.get('ttbb.welcomed', false)) { $('#welcome').classList.add('open'); $('#welcomeStart').focus(); }
 else if (!myTeam) openTeam();
 loadVol();
 if (DEMO) {
