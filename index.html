@@ -500,7 +500,7 @@ h2{font-family:var(--display);font-weight:400;font-size:21px;letter-spacing:-.01
     </section>
 
     <footer class="foot">
-      시설 이름, 봉사 기록, 지난 시즌 결과는 시연용 가상 데이터예요.<br>
+      <span id="fakeNote">시설 이름, 봉사 기록, 지난 시즌 결과는 시연용 가상 데이터예요.</span><br>
       경계: 통계청 행정동 경계 기반 admdongkor(2026-07-01)<br>캠퍼스 위치: © OpenStreetMap 기여자, 캠퍼스 그림은 실제 모습과 다른 일러스트예요.
     </footer>
   </aside>
@@ -564,8 +564,6 @@ const IMG = {"연세대 미래캠퍼스": "data:image/png;base64,iVBORw0KGgoAAAA
 
 /* ---------- constants ---------- */
 const SEASON = { start: new Date('2026-03-02T00:00:00+09:00'), end: new Date('2026-12-18T23:59:59+09:00'), goal: 3350, year: 2026 };
-const DEFAULT_CHAMP = { team: 'sangji', season: 2025, fresh: false };
-let champion = { ...DEFAULT_CHAMP };
 let testProgress = null;
 let testLogs = [];
 let treeFallen = false;
@@ -578,6 +576,9 @@ const DIST_ORDER = ['문막읍','지정면','호저면','소초면','부론면',
 // 주소 끝이 #test면 시연 모드: 요청 날짜가 오늘, 확인 코드는 서버 없이 이 브라우저에서 발급·확인(무대에서 인터넷이 끊겨도 됨),
 // 기록은 실제 기록과 따로 저장. 실사용 흐름(서버 확인)은 그대로 두고 이 값으로만 갈라진다
 const DEMO = location.hash === '#test';
+// 지난 시즌 우승은 시연용 가상 결과. 실사용은 첫 시즌이라 우승 대학이 없다
+const DEFAULT_CHAMP = DEMO ? { team: 'sangji', season: 2025, fresh: false } : null;
+let champion = DEFAULT_CHAMP && { ...DEFAULT_CHAMP };
 
 /* ---------- storage ---------- */
 const sk = k => DEMO ? k.replace(/^ttbb\./, 'ttbb.demo.') : k;
@@ -812,8 +813,8 @@ function renderSeason() {
     : test ? `잎의 <b>${pct}%</b>가 물든 모습이에요.`
     : `원주 대학생과 시민이 쌓은 봉사 <b>${fmt(Math.round(S.total))}점</b>으로 잎의 ${pct}%가 물들었어요.`;
   renderTimeline();
-  const c = TEAM[champion.team];
-  $('#champ').innerHTML = `${emb(c, 18)}<span><b>${esc(c.name)}</b>${hasJong(c.name) ? '이' : '가'} ${champion.season} 시즌에 우승했어요. 지도의 하얀 표식은 ${champion.season + 1} 시즌 결산까지 남아요.</span>`;
+  const c = champion && TEAM[champion.team];
+  $('#champ').innerHTML = !c ? '' : `${emb(c, 18)}<span><b>${esc(c.name)}</b>${hasJong(c.name) ? '이' : '가'} ${champion.season} 시즌에 우승했어요. 지도의 하얀 표식은 ${champion.season + 1} 시즌 결산까지 남아요.</span>`;
   renderBanner();
   paintTree(p);
 }
@@ -830,8 +831,10 @@ function renderTimeline() {
   $('#seasonMeta').textContent = `목표 ${fmt(SEASON.goal)}점, ` + (days > 0 ? `결산까지 ${days}일` : '지금 결산 중');
 }
 function renderBanner() {
-  const c = TEAM[champion.team];
   const b = $('#mapBanner');
+  b.style.display = champion ? '' : 'none';
+  if (!champion) return;
+  const c = TEAM[champion.team];
   b.innerHTML = `${emb(c, 22)}<span><b>${champion.season} 시즌 우승 ${esc(c.short)}</b><br><span style="color:var(--chalk-3)">하얀 표식은 ${champion.season + 1} 시즌 결산까지 남아요</span></span>`;
   b.classList.toggle('fresh', !!champion.fresh);
   b.style.borderLeftColor = champion.fresh ? c.color : '';
@@ -910,7 +913,7 @@ function placeBuildings() {
   const W = svg.clientWidth || 900, H = svg.clientHeight || 800;
   const fit = box => DESK.matches ? Math.min((W - 56) / box[2], (H - 72) / box[3]) : W / box[2];
   const sAll = fit(VB_ALL), sTown = fit(VB_TOWN);
-  const champCamp = DATA.campuses.find(c => c.team === champion.team);
+  const champCamp = champion && DATA.campuses.find(c => c.team === champion.team);
   const marks = DATA.facilities.map(f => [f.x, f.y, 26]).concat(DATA.campuses.map(c => [c.x, c.y, c === champCamp ? 90 * (champion.fresh ? 1.35 : 1) : 32]));
   for (const [d, b] of Object.entries(bldEls)) {
     const s = /[면읍]$/.test(d) ? sAll : sTown;
@@ -1038,7 +1041,7 @@ function renderMap() {
   let cropChanged = false;
   for (const g of markerEls) {
     if (g.dataset.fid || g.dataset.vol) continue;
-    const want = g.dataset.team === champion.team && g.dataset.primary ? `${champion.team}|${champion.season}|${champion.fresh ? 1 : 0}` : '';
+    const want = champion && g.dataset.team === champion.team && g.dataset.primary ? `${champion.team}|${champion.season}|${champion.fresh ? 1 : 0}` : '';
     if ((g.dataset.crop || '') === want) continue;
     g.querySelectorAll('.crop').forEach(h => h.remove());
     if (want) g.prepend(cropMark(champion.fresh));
@@ -1198,7 +1201,7 @@ function renderInfo() {
   if (selected.kind === 'campus') {
     const c = DATA.campuses.find(x => x.name === selected.id), t = TEAM[c.team], st = S.teams[c.team];
     box.innerHTML = closeBtn + `<h3>${esc(c.name)}</h3><p class="meta">${esc(c.snippet.replace(/ · /g, ', '))}</p>${IMG[c.name] ? `<img class="campus-img" src="${IMG[c.name]}" alt="${esc(c.name)} 특징을 그린 일러스트">` : ''}
-      <dl class="kv"><dt>팀 점수</dt><dd>${fmt(Math.round(st.pts))}점</dd><dt>1위 구역</dt><dd>${st.terr}곳</dd>${c.team === champion.team ? `<dt>표식</dt><dd>${champion.season} 시즌 우승 대학</dd>` : ''}</dl>
+      <dl class="kv"><dt>팀 점수</dt><dd>${fmt(Math.round(st.pts))}점</dd><dt>1위 구역</dt><dd>${st.terr}곳</dd>${champion && c.team === champion.team ? `<dt>표식</dt><dd>${champion.season} 시즌 우승 대학</dd>` : ''}</dl>
       <p class="hint">${esc(c.desc)}</p>`;
   }
 }
@@ -1419,7 +1422,7 @@ const REQS = (() => {
       const d = new Date(Date.now() + 9 * 3600e3 + (DEMO ? 0 : 1 + (i * 5 + k * 3) % 10) * 864e5);
       const need = 2 + (i + k) % 3;
       out.push({ id: `r${f.id}_${k}`, fid: f.id, title, hours, digital: !!digital, src: src || 'org', date: d.toISOString().slice(0, 10),
-        when: `${d.getUTCMonth() + 1}월 ${d.getUTCDate()}일 (${wd[d.getUTCDay()]}) ${[10, 14, 16][(i + k) % 3]}시`, need, filled: (i * 7 + k) % need });
+        when: `${d.getUTCMonth() + 1}월 ${d.getUTCDate()}일 (${wd[d.getUTCDay()]}) ${[10, 14, 16][(i + k) % 3]}시`, need, filled: DEMO ? (i * 7 + k) % need : 0 });
     }
   });
   return out;
@@ -1754,7 +1757,7 @@ function showEffect() {
   setTimeout(() => toast(`${w.t.short} 우승 표식이 ${SEASON.year + 1} 시즌 결산까지 지도에 남아요`), 400);
 }
 function resetTest() {
-  testProgress = null; testLogs = []; champion = { ...DEFAULT_CHAMP };
+  testProgress = null; testLogs = []; champion = DEFAULT_CHAMP && { ...DEFAULT_CHAMP };
   simWeek = 0; for (const k in lastVisit) delete lastVisit[k];
   if (treeFallen) restoreLeaves();
   S = compute(); selected = null; renderAll(); zoomTo('all');
@@ -1814,6 +1817,7 @@ if (DEMO) { $('#welcomeDemo').hidden = false; $('#welcomeTest').hidden = true; $
 if (DEMO || !store.get('ttbb.welcomed', false)) { $('#welcome').classList.add('open'); $('#welcomeStart').focus(); }
 else if (!myTeam) openTeam();
 loadVol();
+if (!DEMO) $('#fakeNote').textContent = '시설 이름과 요청은 시연용 가상 데이터예요.';
 if (DEMO) {
   openTest();
   $('#orgLink').href = '/org.html#test';
