@@ -1,0 +1,13 @@
+{
+  "name": "bulumabong-demo-video",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "record": "node record.js",
+    "finish": "python finish.py"
+  },
+  "dependencies": {
+    "playwright": "^1.56.0",
+    "ffmpeg-static": "^5.2.0"
+  }
+}

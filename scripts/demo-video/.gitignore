@@ -1,0 +1,11 @@
+.npm-cache/
+*-inspect.png
+inspect.js
+rehearse.js
+.pw-browsers/
+
+.pydeps/
+.pip-cache/
+.tmp/
+inspect-ai.js
+__pycache__/
