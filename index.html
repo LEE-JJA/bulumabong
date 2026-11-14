@@ -1428,11 +1428,16 @@ const REQS = (() => {
   return out;
 })();
 // 전화 메모로 올린 요청(mine)은 이 브라우저에 남긴다
-for (const saved of store.get('ttbb.reqs', []).filter(r => FAC[r.fid])) {
-  const r = saved.date ? saved : { ...saved, date: todayStr() };
-  const i = REQS.findIndex(x => x.id === r.id);
-  if (i >= 0) REQS[i] = r; else REQS.unshift(r);
-} // 날짜 없이 저장된 예전 요청은 오늘로
+function mergeSavedReqs() {
+  for (const saved of store.get('ttbb.reqs', []).filter(r => FAC[r.fid])) {
+    const r = saved.date ? saved : { ...saved, date: todayStr() }; // 날짜 없이 저장된 예전 요청은 오늘로
+    const i = REQS.findIndex(x => x.id === r.id);
+    if (i >= 0) REQS[i] = r; else REQS.unshift(r);
+  }
+}
+mergeSavedReqs();
+// 같은 브라우저의 기관 화면 탭에서 요청을 올리거나 고치면 새로고침 없이 바로 반영
+addEventListener('storage', e => { if (e.key === sk('ttbb.reqs')) { mergeSavedReqs(); renderAll(); } });
 // 전화 메모의 개인정보를 브라우저에서 먼저 가린다. api/brief.js의 PII와 같은 규칙(바꾸면 둘 다)
 const PII = [
   [/\d{6}[-\s]?[1-4]\d{6}/g, '[주민번호]'],
@@ -1819,6 +1824,11 @@ else if (!myTeam) openTeam();
 loadVol();
 if (!DEMO) $('#fakeNote').textContent = '시설 이름과 요청은 시연용 가상 데이터예요.';
 if (DEMO) {
+  // 아래 탭이 주소를 #req 등으로 바꾸면 새로고침 때 실사용 화면이 열리므로, 시연 모드에서는 주소를 #test로 둔 채 이동만 한다
+  $('.tabbar').addEventListener('click', e => {
+    const a = e.target.closest('a[href^="#"]'), t = a && document.querySelector(a.getAttribute('href'));
+    if (t) { e.preventDefault(); t.scrollIntoView({ behavior: 'smooth' }); }
+  });
   openTest();
   $('#orgLink').href = '/org.html#test';
   setTimeout(() => toast('시연 모드예요. 요청은 오늘 날짜이고, 기록은 실제 기록과 따로 저장돼요'), 600);
