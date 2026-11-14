@@ -661,7 +661,8 @@ function compute() {
   for (const f of DATA.facilities) {
     facPts[f.id] = {}; facHrs[f.id] = {};
     for (const t of DATA.teams) {
-      const h = DATA.agg[f.id][t.id] || 0;
+      // 가상 봉사 기록은 시연 모드에서만. 실사용은 실제 기록이 쌓이기 전까지 건물이 없다
+      const h = DEMO ? DATA.agg[f.id][t.id] || 0 : 0;
       facHrs[f.id][t.id] = h;
       facPts[f.id][t.id] = h * mult(t.id, f).total;
     }
